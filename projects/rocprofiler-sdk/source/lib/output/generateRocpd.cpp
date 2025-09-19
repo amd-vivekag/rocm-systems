@@ -226,12 +226,14 @@ void
 read_file(rocpd_sql_engine_t                        engine,
           rocpd_sql_schema_kind_t                   kind,
           rocpd_sql_options_t                       options,
+          rocpd_version_triplet_t                   schema_version,
           const rocpd_sql_schema_jinja_variables_t* variables,
           const char*                               schema_path,
           const char*                               schema_content,
           void*                                     user_data)
 {
-    common::consume_args(engine, kind, options, variables, schema_path, schema_content, user_data);
+    common::consume_args(
+        engine, kind, options, schema_version, variables, schema_path, schema_content, user_data);
 
     *static_cast<std::string*>(user_data) = replace_placeholders(schema_content);
 }
@@ -241,6 +243,7 @@ read_schema_file(rocpd_sql_schema_kind_t schema_kind)
 {
     auto _variables     = common::init_public_api_struct(rocpd_sql_schema_jinja_variables_t{});
     auto _options       = ROCPD_SQL_OPTIONS_NONE;
+    auto _version       = rocpd_version_triplet_t{3, 0, 1};  // default schema version
     auto _schema_result = std::string{};
 
     _variables.uuid = get_uuid().c_str();
@@ -249,6 +252,7 @@ read_schema_file(rocpd_sql_schema_kind_t schema_kind)
     ROCPD_CHECK(rocpd_sql_load_schema(ROCPD_SQL_ENGINE_SQLITE3,
                                       schema_kind,
                                       _options,
+                                      _version,
                                       &_variables,
                                       read_file,
                                       nullptr,
@@ -713,7 +717,7 @@ write_rocpd(
 
         for(auto itr : {ROCPD_SQL_SCHEMA_ROCPD_VIEWS,
                         ROCPD_SQL_SCHEMA_ROCPD_DATA_VIEWS,
-                        ROCPD_SQL_SCHEMA_ROCPD_MARKER_VIEWS,
+                        ROCPD_SQL_SCHEMA_ROCPD_METADATA,
                         ROCPD_SQL_SCHEMA_ROCPD_SUMMARY_VIEWS})
         {
             auto views_schema = read_schema_file(itr);
