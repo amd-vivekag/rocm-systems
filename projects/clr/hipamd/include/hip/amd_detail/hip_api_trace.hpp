@@ -47,8 +47,8 @@
 // - Reset any of the *_STEP_VERSION defines to zero if the corresponding *_MAJOR_VERSION increases
 #define HIP_API_TABLE_STEP_VERSION 0
 #define HIP_COMPILER_API_TABLE_STEP_VERSION 0
-#define HIP_TOOLS_API_TABLE_STEP_VERSION 0
-#define HIP_RUNTIME_API_TABLE_STEP_VERSION 25
+#define HIP_TOOLS_API_TABLE_STEP_VERSION 1
+#define HIP_RUNTIME_API_TABLE_STEP_VERSION 26
 
 // HIP API interface
 // HIP compiler dispatch functions
@@ -1728,9 +1728,11 @@ struct HipDispatchTable {
   t_hipKernelSetAttribute hipKernelSetAttribute_fn;
   t_hipKernelGetFunction hipKernelGetFunction_fn;
 
-  // DO NOT EDIT ABOVE!
-  // HIP_RUNTIME_API_TABLE_STEP_VERSION == 25
+  // HIP_RUNTIME_API_TABLE_STEP_VERSION == 26
+  t_hipDeviceGetUuid hipDeviceGetCuid_fn;
 
+  // DO NOT EDIT ABOVE!
+  // HIP_RUNTIME_API_TABLE_STEP_VERSION == 27
   // ******************************************************************************************* //
   //
   //                                            READ BELOW
@@ -1753,7 +1755,10 @@ struct HipToolsDispatchTable {
 
   // DO NOT EDIT ABOVE!
   // HIP_TOOLS_API_TABLE_STEP_VERSION == 1
+  t___hipReportDevices __hipReportDevicesCuid_fn;
 
+  // DO NOT EDIT ABOVE!
+  // HIP_TOOLS_API_TABLE_STEP_VERSION == 2
   // ******************************************************************************************* //
   //
   //                                            READ BELOW
