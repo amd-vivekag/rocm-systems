@@ -1825,7 +1825,7 @@ get_spm_config(rocprofiler_agent_id_t agent_id)
 
 void
 spm_dispatch_callback(const rocprofiler_spm_dispatch_counting_service_data_t* dispatch_data,
-                      rocprofiler_counter_config_id_t*                    config,
+                      rocprofiler_counter_config_id_t*                        config,
                       rocprofiler_user_data_t*                                user_data,
                       void* /*callback_data_args*/)
 {
