@@ -265,14 +265,14 @@ struct SPMMemoryPool
         if(delete_packets_fn != nullptr && handle.handle != 0) delete_packets_fn(handle);
     };
     explicit SPMMemoryPool() = default;
-    static hsa_status_t   Alloc(void**                         ptr,
-                                size_t                         size,
-                                aqlprofile_buffer_desc_flags_t flags,
-                                void*                          data);
-    static void           Free(void* ptr, void* data);
-    static hsa_status_t   Copy(void* dst, const void* src, size_t size, void* data);
+    static hsa_status_t Alloc(void**                         ptr,
+                              size_t                         size,
+                              aqlprofile_buffer_desc_flags_t flags,
+                              void*                          data);
+    static void         Free(void* ptr, void* data);
+    static hsa_status_t Copy(void* dst, const void* src, size_t size, void* data);
     spm::spm_interface::spm_delete_packets_fn_t* delete_packets_fn{nullptr};
-    aqlprofile_handle_t   handle{};
+    aqlprofile_handle_t                          handle{};
 };
 
 class SPMPacket : public AQLPacket
@@ -314,8 +314,7 @@ public:
     void                                             populate_before() override;
     void                                             populate_after() override;
     bool                                             valid() const { return is_valid; }
-
-    std::optional<spm::spm_interface> sym{};
+    std::optional<spm::spm_interface>                sym{};
 
 private:
     std::atomic<bool> running{false};
