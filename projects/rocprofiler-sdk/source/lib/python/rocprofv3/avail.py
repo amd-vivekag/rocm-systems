@@ -38,7 +38,8 @@ def build_counter_string(obj):
     counter_str = "\n".join(
         ["{:20}:\t{}".format(key, itr) for key, itr in obj.get_as_dict().items()]
     )
-
+    spm_support = "Supported" if obj.spm_support else "Not Supported"
+    counter_str += "\n" + "{:20}:\t{}".format("SPM", spm_support)
     counter_str += "\n" + "{:20}:\t".format("Dimensions")
     counter_str += " ".join(dim.__str__() for dim in obj.dimensions)
     return counter_str
@@ -74,12 +75,14 @@ class counter:
         counter_description,
         counter_dimensions,
         is_hw_constant,
+        spm_support,
     ):
         self.name = counter_name
         self.counter_handle = counter_handle
         self.description = counter_description
         self.dimensions = counter_dimensions
         self.is_hw_constant = is_hw_constant
+        self.spm_support = spm_support
 
     def get_as_dict(self):
         return dict(zip((self.columns), [self.name, self.description]))
@@ -102,6 +105,7 @@ class derived_counter(counter):
         counter_expression,
         counter_dimensions,
         is_hw_constant,
+        spm_support,
     ):
         super().__init__(
             counter_handle,
@@ -109,6 +113,7 @@ class derived_counter(counter):
             counter_description,
             counter_dimensions,
             is_hw_constant,
+            spm_support,
         )
         self.expression = counter_expression
 
@@ -131,6 +136,7 @@ class basic_counter(counter):
         counter_block,
         counter_dimensions,
         is_hw_constant,
+        spm_support,
     ):
         super().__init__(
             counter_handle,
@@ -138,6 +144,7 @@ class basic_counter(counter):
             counter_description,
             counter_dimensions,
             is_hw_constant,
+            spm_support,
         )
         self.block = counter_block
 
@@ -320,8 +327,7 @@ def get_dimensions(counter_handle):
         dimensions.append(dim)
     return dimensions
 
-
-def get_counters():
+def get_counters_helper(is_spm=False):
     agent_counters = {}
     agents = get_agent_handles()
     agent_counters = {}
@@ -334,8 +340,19 @@ def get_counters():
         if counters:
             for counter_id in list(counters):
                 counter_info = get_counter_info(counter_id)
-                agent_counters[agent].append(counter_info)
-    return agent_counters
+                if is_spm:
+                    if counter_info.spm_support.value:   
+                      agent_counters[agent].append(counter_info)
+                else: 
+                    agent_counters[agent].append(counter_info)
+    return agent_counters 
+
+def get_counters():
+   return get_counters_helper(False)
+
+
+def get_spm_counters():
+   return get_counters_helper(True)
 
 
 def get_pc_sample_configs():
@@ -358,17 +375,20 @@ def get_counter_info(counter_handle):
         ctypes.POINTER(ctypes.c_char_p),
         ctypes.POINTER(ctypes.c_uint),
         ctypes.POINTER(ctypes.c_uint),
+        ctypes.POINTER(ctypes.c_uint),
     ]
     counter_name = ctypes.c_char_p()
     counter_description = ctypes.c_char_p()
     is_derived = ctypes.c_uint()
     is_hw_constant = ctypes.c_uint()
+    spm_support = ctypes.c_uint()
     lib.counter_info(
         counter_handle,
         ctypes.byref(counter_name),
         ctypes.byref(counter_description),
         ctypes.byref(is_derived),
         ctypes.byref(is_hw_constant),
+        ctypes.byref(spm_support),
     )
 
     if is_derived.value == 1:
@@ -386,6 +406,7 @@ def get_counter_info(counter_handle):
             get_string_value(expression),
             dimensions,
             is_hw_constant,
+            spm_support,
         )
 
     elif not is_hw_constant.value:
@@ -400,6 +421,7 @@ def get_counter_info(counter_handle):
             get_string_value(block),
             dimensions,
             is_hw_constant,
+            spm_support,
         )
     else:
         return counter(
@@ -408,6 +430,7 @@ def get_counter_info(counter_handle):
             get_string_value(counter_description),
             [],
             is_hw_constant.value,
+            spm_support,
         )
 
 
