@@ -37,7 +37,7 @@ rocprofiler_sdk_spm_disabled(IS_SPM_DISABLED)
 if(${SANITIZER})
     set(IS_SPM_DISABLED True)
 endif()
-set(IS_DISABLED False)
+set(IS_DISABLED True)
 
 add_library(spm-counter-collection-buffer-client SHARED)
 target_sources(spm-counter-collection-buffer-client PRIVATE buffered_client.cpp

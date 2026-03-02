@@ -103,7 +103,7 @@ record_callback(const rocprofiler_spm_dispatch_counting_service_data_t* dispatch
  */
 void
 dispatch_callback(const rocprofiler_spm_dispatch_counting_service_data_t* dispatch_data,
-                  rocprofiler_counter_config_id_t*                    config,
+                  rocprofiler_counter_config_id_t*                        config,
                   rocprofiler_user_data_t* /*   user_data*/,
                   void* /*callback_data_args*/)
 {
@@ -114,7 +114,7 @@ dispatch_callback(const rocprofiler_spm_dispatch_counting_service_data_t* dispat
      * set for the agent. If we have, return it. Otherwise, construct a new profile counter
      * set.
      */
-    static std::shared_mutex                                                 m_mutex       = {};
+    static std::shared_mutex                                             m_mutex       = {};
     static std::unordered_map<uint64_t, rocprofiler_counter_config_id_t> profile_cache = {};
 
     auto search_cache = [&]() {
@@ -176,10 +176,10 @@ dispatch_callback(const rocprofiler_spm_dispatch_counting_service_data_t* dispat
 
     // Create a colleciton profile for the counters
     rocprofiler_counter_config_id_t profile = {.handle = 0};
-    auto                                params  = rocprofiler_spm_configuration_t{};
-    params.frequency                            = 1.0;
-    params.buffer_size                          = 32768;
-    params.timeout                              = 0;
+    auto                            params  = rocprofiler_spm_configuration_t{};
+    params.frequency                        = 1.0;
+    params.buffer_size                      = 32768;
+    params.timeout                          = 0;
     ROCPROFILER_CALL(rocprofiler_spm_create_counter_config(dispatch_data->dispatch_info.agent_id,
                                                            collect_counters.data(),
                                                            collect_counters.size(),

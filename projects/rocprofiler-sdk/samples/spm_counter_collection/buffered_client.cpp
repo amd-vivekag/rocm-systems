@@ -196,7 +196,7 @@ get_profile_cache()
  */
 void
 dispatch_callback(const rocprofiler_spm_dispatch_counting_service_data_t* dispatch_data,
-                  rocprofiler_counter_config_id_t*                    config,
+                  rocprofiler_counter_config_id_t*                        config,
                   rocprofiler_user_data_t* /* user_data*/,
                   void* /*  callback_data_args*/)
 {
@@ -273,10 +273,10 @@ build_profile_for_agent(rocprofiler_agent_id_t       agent,
 
     // Create and return the profile
     rocprofiler_counter_config_id_t profile = {.handle = 0};
-    auto                                params  = rocprofiler_spm_configuration_t{};
-    params.frequency                            = 1.0;
-    params.buffer_size                          = 32768;
-    params.timeout                              = 0;
+    auto                            params  = rocprofiler_spm_configuration_t{};
+    params.frequency                        = 1.0;
+    params.buffer_size                      = 32768;
+    params.timeout                          = 0;
     ROCPROFILER_CALL(
         rocprofiler_spm_create_counter_config(
             agent, collect_counters.data(), collect_counters.size(), &params, &profile),

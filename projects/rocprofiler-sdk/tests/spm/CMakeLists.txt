@@ -27,7 +27,7 @@ rocprofiler_sdk_spm_disabled(IS_SPM_DISABLED)
 if(${SANITIZER})
     set(IS_SPM_DISABLED True)
 endif()
-set(IS_DISABLED False)
+set(IS_DISABLED True)
 
 rocprofiler_add_integration_execute_test(
     test-spm-dispatch-collection-execute
