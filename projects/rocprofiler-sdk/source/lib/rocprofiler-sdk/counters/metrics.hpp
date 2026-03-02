@@ -46,7 +46,7 @@ class Metric
 {
 public:
     Metric() = default;
-    Metric(const std::string&,  // Get rid of this...
+    Metric(const std::string&,
            std::string name,
            std::string block,
            std::string event,
@@ -54,7 +54,7 @@ public:
            std::string expr,
            std::string constant,
            uint64_t    id);
-
+    
     const std::string& name() const { return name_; }
     const std::string& block() const { return block_; }
     const std::string& event() const { return event_; }
@@ -129,6 +129,9 @@ checkValidMetric(const std::string& agent, const Metric& metric);
  */
 rocprofiler_status_t
 setCustomCounterDefinition(const CustomCounterDefinition& def);
+
+bool
+isSupportSpm(const Metric& metric, rocprofiler_agent_id_t agent_id);
 }  // namespace counters
 }  // namespace rocprofiler
 
