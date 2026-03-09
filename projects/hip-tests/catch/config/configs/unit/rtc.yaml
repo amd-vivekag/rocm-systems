@@ -222,3 +222,9 @@ rtc:
     <<: *level_2
     # Rock_Window_Failures_on_gfx1151
     disabled: [amd_windows]
+  Unit_hiprtc_spirv_compilation:
+    <<: *level_2
+    tags: [compile]
+  Unit_hiprtc_spirv_linker:
+    <<: *level_2
+    tags: [link]
