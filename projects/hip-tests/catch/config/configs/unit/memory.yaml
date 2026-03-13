@@ -2453,3 +2453,5 @@ memory:
     disabled: [amd_linux]
   Unit_hipHostAlloc_AllocateMoreThanTotalSystemMemory: *level_2
   Unit_hipHostMalloc_AllocateMoreThanTotalSystemMemory: *level_2
+  Unit_hipMemGetDefaultMemPool_Negative: *level_2
+  Unit_hipMemGetDefaultMemPool_Basic: *level_2
