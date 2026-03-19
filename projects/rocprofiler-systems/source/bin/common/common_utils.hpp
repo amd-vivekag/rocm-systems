@@ -5,11 +5,15 @@
 
 #include "common/preset_loader.hpp"
 
+#include <nlohmann/json.hpp>
+
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <initializer_list>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <string>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -53,111 +57,201 @@ check_directory_writable(const std::string& dir)
     return (access(parent.c_str(), W_OK) == 0);
 }
 
+/**
+ * Generates a tree-formatted description of a preset by reading its JSON data.
+ * This avoids hardcoding descriptions that can diverge from the actual preset config.
+ */
 inline std::string
-get_preset_description(std::string_view preset_mode)
+generate_preset_description(std::string_view preset_mode)
 {
-    // Descriptions keyed by preset name (without "--" prefix)
-    static const std::unordered_map<std::string_view, std::string> descriptions = {
-        { "balanced", "Balanced profiling with moderate overhead and comprehensive data\n"
-                      "  ├─ Tracing:         ON (Perfetto timeline)\n"
-                      "  ├─ Profiling:       ON (call-stack based)\n"
-                      "  ├─ CPU Sampling:    ON @ 50 Hz\n"
-                      "  └─ Process Metrics: ON (CPU freq, memory)" },
-        { "profile-only", "Profiling-only mode without tracing (flat profile)\n"
-                          "  ├─ Tracing:         OFF\n"
-                          "  ├─ Profiling:       ON (flat profile)\n"
-                          "  ├─ CPU Sampling:    ON @ 100 Hz\n"
-                          "  └─ Process Metrics: OFF" },
-        { "detailed", "Comprehensive profiling with full system metrics\n"
-                      "  ├─ Tracing:         ON (Perfetto timeline)\n"
-                      "  ├─ Profiling:       ON (call-stack based)\n"
-                      "  ├─ CPU Sampling:    ON @ 100 Hz (all CPUs)\n"
-                      "  └─ Process Metrics: ON (CPU freq, memory)" },
-        { "trace-hpc", "Optimized for HPC/MPI/OpenMP applications\n"
-                       "  ├─ Tracing:         ON (Perfetto timeline)\n"
-                       "  ├─ Profiling:       ON (call-stack based)\n"
-                       "  ├─ CPU Sampling:    OFF (reduced overhead)\n"
-                       "  ├─ Process Metrics: ON\n"
-                       "  ├─ OpenMP (OMPT):   ON\n"
-                       "  ├─ MPI (MPIP):      ON\n"
-                       "  ├─ Kokkos:          ON\n"
-                       "  ├─ RCCL:            ON\n"
-                       "  ├─ PAPI Events:     PAPI_TOT_INS, PAPI_TOT_CYC, PAPI_L3_TCM\n"
-                       "  ├─ ROCm Domains:    HIP API, kernels, memory, scratch\n"
-                       "  └─ GPU Metrics:     busy, temp, power, mem_usage" },
-        { "workload-trace", "Optimized for general compute workloads (AI/ML, HPC, etc.)\n"
-                            "  ├─ Tracing:         ON (Perfetto timeline)\n"
-                            "  ├─ Profiling:       ON (call-stack based)\n"
-                            "  ├─ CPU Sampling:    OFF (reduced overhead)\n"
-                            "  ├─ Process Metrics: ON\n"
-                            "  ├─ ROCtracer:       ON\n"
-                            "  ├─ HIP API Trace:   ON\n"
-                            "  ├─ HIP Activity:    ON (kernel timing)\n"
-                            "  ├─ RCCL:            ON (collective comms)\n"
-                            "  ├─ rocPD:           ON (SQLite Database Output Format)\n"
-                            "  ├─ MPI (MPIP):      ON\n"
-                            "  ├─ ROCm Domains:    HIP API, kernels, memory, scratch\n"
-                            "  ├─ GPU Metrics:     busy, temp, power, mem_usage\n"
-                            "  └─ Buffer Size:     2 GB (for long traces)" },
-        { "sys-trace", "Comprehensive system API tracing\n"
-                       "  ├─ Tracing:         ON (Perfetto timeline)\n"
-                       "  ├─ Profiling:       ON (call-stack based)\n"
-                       "  ├─ ROCm APIs:       HIP API, HSA API\n"
-                       "  ├─ Marker API:      ROCTx\n"
-                       "  ├─ RCCL:            ON (collective communications)\n"
-                       "  ├─ Decode/JPEG:     rocDecode, rocJPEG\n"
-                       "  ├─ Memory Ops:      copies, scratch, allocations\n"
-                       "  └─ Kernel Dispatch: ON" },
-        { "runtime-trace", "Runtime API tracing (excludes compiler and low-level HSA)\n"
-                           "  ├─ Tracing:         ON (Perfetto timeline)\n"
-                           "  ├─ Profiling:       ON (call-stack based)\n"
-                           "  ├─ HIP Runtime:     ON (excludes compiler API)\n"
-                           "  ├─ Marker API:      ROCTx\n"
-                           "  ├─ RCCL:            ON (collective communications)\n"
-                           "  ├─ Decode/JPEG:     rocDecode, rocJPEG\n"
-                           "  ├─ Memory Ops:      copies, scratch, allocations\n"
-                           "  └─ Kernel Dispatch: ON" },
-        { "trace-gpu",
-          "GPU workload analysis with host functions, MPI, and device activity\n"
-          "  ├─ Tracing:         ON (Perfetto timeline)\n"
-          "  ├─ Profiling:       OFF (reduced overhead)\n"
-          "  ├─ ROCm:            ON\n"
-          "  ├─ AMD SMI:         ON (GPU metrics)\n"
-          "  ├─ CPU Sampling:    Disabled (none)\n"
-          "  └─ ROCm Domains:    HIP runtime, ROCTx, kernels, memory, scratch" },
-        { "trace-openmp",
-          "OpenMP offload workloads with HSA domains\n"
-          "  ├─ Tracing:         ON (Perfetto timeline)\n"
-          "  ├─ Profiling:       OFF (reduced overhead)\n"
-          "  ├─ ROCm:            ON\n"
-          "  ├─ OMPT:            ON (OpenMP tools interface)\n"
-          "  └─ ROCm Domains:    HIP runtime, ROCTx, kernels, memory, HSA API" },
-        { "profile-mpi", "MPI communication latency profiling\n"
-                         "  ├─ Tracing:         OFF\n"
-                         "  ├─ Profiling:       ON (flat profile)\n"
-                         "  ├─ AMD SMI:         OFF\n"
-                         "  ├─ ROCm:            OFF\n"
-                         "  └─ Focus:           Wall-clock files per rank" },
-        { "trace-hw-counters", "Hardware counter collection during execution\n"
-                               "  ├─ Profiling:       ON\n"
-                               "  ├─ CPU Sampling:    Disabled (none)\n"
-                               "  ├─ ROCm Events:     VALUUtilization, Occupancy\n"
-                               "  └─ Focus:           GPU performance counters" }
-    };
-
     // Normalize the preset_mode by stripping leading "--" if present
-    std::string_view normalized = preset_mode;
+    std::string normalized{ preset_mode };
     if(normalized.size() > 2 && normalized.substr(0, 2) == "--")
-    {
         normalized = normalized.substr(2);
+
+    auto info = rocprofsys::preset_loader::load_preset_or_file(normalized);
+    if(!info) return "";
+
+    // Load the raw JSON to access hierarchical structure
+    auto preset_dir = rocprofsys::preset_loader::find_preset_directory();
+    if(preset_dir.empty()) return info->description;
+
+    auto          filepath = preset_dir + "/" + normalized + ".json";
+    std::ifstream ifs{ filepath };
+    if(!ifs.is_open()) return info->description;
+
+    nlohmann::json j;
+    try
+    {
+        j = nlohmann::json::parse(ifs);
+    } catch(const nlohmann::json::exception&)
+    {
+        return info->description;
     }
 
-    auto it = descriptions.find(normalized);
-    if(it != descriptions.end())
+    // Build tree lines from JSON sections
+    std::vector<std::string> lines;
+
+    // Tracing
+    if(j.contains("tracing"))
     {
-        return it->second;
+        const auto& t     = j["tracing"];
+        bool        on    = t.value("enabled", false);
+        std::string entry = std::string("Tracing:         ") + (on ? "ON" : "OFF");
+        if(on && t.contains("buffer_size_kb"))
+        {
+            auto kb = t["buffer_size_kb"].value("value", 0);
+            if(kb >= 1024000)
+                entry += " (buffer: " + std::to_string(kb / 1024000) + " GB)";
+            else if(kb > 0)
+                entry += " (buffer: " + std::to_string(kb) + " KB)";
+        }
+        lines.push_back(entry);
     }
-    return "";
+
+    // Profiling
+    if(j.contains("profiling"))
+    {
+        const auto& p     = j["profiling"];
+        bool        on    = p.value("enabled", false);
+        std::string entry = std::string("Profiling:       ") + (on ? "ON" : "OFF");
+        if(on && p.contains("flat_profile") && p["flat_profile"].value("enabled", false))
+            entry += " (flat profile)";
+        lines.push_back(entry);
+    }
+
+    // Sampling
+    if(j.contains("sampling"))
+    {
+        const auto& s     = j["sampling"];
+        bool        on    = s.value("enabled", false);
+        std::string entry = std::string("CPU Sampling:    ") + (on ? "ON" : "OFF");
+        if(on && s.contains("frequency_hz"))
+        {
+            auto freq = s["frequency_hz"].value("value", 0);
+            if(freq > 0) entry += " @ " + std::to_string(freq) + " Hz";
+        }
+        if(s.contains("cpus") && s["cpus"].value("value", "") == "none")
+        {
+            entry = "CPU Sampling:    Disabled (none)";
+        }
+        lines.push_back(entry);
+    }
+
+    // Domains: GPU
+    if(j.contains("domains") && j["domains"].contains("gpu"))
+    {
+        const auto& gpu = j["domains"]["gpu"];
+        if(gpu.value("enabled", false))
+        {
+            std::string entry = "GPU Metrics:     ON";
+            if(gpu.contains("metrics"))
+            {
+                std::vector<std::string> names;
+                for(const auto& [name, m] : gpu["metrics"].items())
+                {
+                    if(m.value("enabled", false)) names.push_back(name);
+                }
+                if(!names.empty())
+                {
+                    entry += " (";
+                    for(size_t i = 0; i < names.size(); ++i)
+                    {
+                        if(i > 0) entry += ", ";
+                        entry += names[i];
+                    }
+                    entry += ")";
+                }
+            }
+            lines.push_back(entry);
+        }
+    }
+
+    // Domains: ROCm
+    if(j.contains("domains") && j["domains"].contains("rocm"))
+    {
+        const auto& rocm = j["domains"]["rocm"];
+        if(rocm.value("enabled", false) && rocm.contains("api_domains"))
+        {
+            std::vector<std::string> apis;
+            for(const auto& [name, api] : rocm["api_domains"].items())
+            {
+                if(api.value("enabled", false)) apis.push_back(name);
+            }
+            if(!apis.empty())
+            {
+                std::string entry = "ROCm Domains:    ";
+                for(size_t i = 0; i < apis.size(); ++i)
+                {
+                    if(i > 0) entry += ", ";
+                    entry += apis[i];
+                }
+                lines.push_back(entry);
+            }
+        }
+    }
+
+    // Domains: Parallel runtimes
+    if(j.contains("domains") && j["domains"].contains("parallel"))
+    {
+        const auto& par = j["domains"]["parallel"];
+        if(par.contains("runtimes"))
+        {
+            std::vector<std::string> runtimes;
+            for(const auto& [name, rt] : par["runtimes"].items())
+            {
+                if(rt.value("enabled", false)) runtimes.push_back(name);
+            }
+            if(!runtimes.empty())
+            {
+                std::string entry = "Parallel:        ";
+                for(size_t i = 0; i < runtimes.size(); ++i)
+                {
+                    if(i > 0) entry += ", ";
+                    entry += runtimes[i];
+                }
+                lines.push_back(entry);
+            }
+        }
+    }
+
+    // Hardware counters
+    if(j.contains("hardware_counters") && j["hardware_counters"].value("enabled", false))
+    {
+        const auto& hw = j["hardware_counters"];
+        if(hw.contains("papi_events"))
+        {
+            auto val =
+                rocprofsys::json_config::json_value_to_string(hw["papi_events"]["value"]);
+            lines.push_back("PAPI Events:     " + val);
+        }
+        if(hw.contains("rocm_events"))
+        {
+            auto val =
+                rocprofsys::json_config::json_value_to_string(hw["rocm_events"]["value"]);
+            lines.push_back("ROCm Events:     " + val);
+        }
+    }
+
+    // Output: rocPD
+    if(j.contains("output") && j["output"].contains("rocpd_output") &&
+       j["output"]["rocpd_output"].value("enabled", false))
+    {
+        lines.push_back("rocPD Output:    ON");
+    }
+
+    if(lines.empty()) return info->description;
+
+    // Format with tree characters
+    std::ostringstream oss;
+    oss << info->description << "\n";
+    for(size_t i = 0; i < lines.size(); ++i)
+    {
+        bool is_last = (i + 1 == lines.size());
+        oss << "  " << (is_last ? "└─ " : "├─ ") << lines[i];
+        if(!is_last) oss << "\n";
+    }
+    return oss.str();
 }
 
 inline void
@@ -184,7 +278,7 @@ print_pre_execution_info(std::string_view tool_name, std::string_view preset_mod
 
         std::cout << "Preset:        " << preset_mode << "\n";
 
-        auto description = get_preset_description(preset_mode);
+        auto description = generate_preset_description(preset_mode);
         if(!description.empty())
         {
             std::cout << "\n" << description << "\n";
@@ -473,6 +567,145 @@ validate_domain_flags(bool gpu_enabled, bool rocm_enabled, bool cpu_enabled,
                      "using a preset like --preset=detailed for comprehensive "
                      "profiling.\n";
     }
+}
+
+// ============================================================================
+// Shared functions used by both rocprof-sys-run and rocprof-sys-sample
+// ============================================================================
+
+/**
+ * Collect resolved ROCPROFSYS_* settings by comparing current env against initial env.
+ * Returns only variables that were added or changed.
+ */
+inline std::map<std::string, std::string>
+collect_resolved_settings(const std::vector<char*>&              current_env,
+                          const std::unordered_set<std::string>& initial_envs)
+{
+    std::map<std::string, std::string> result;
+
+    // Build a map of initial env vars for efficient lookup
+    std::unordered_map<std::string, std::string> initial_map;
+    for(const auto& env_str : initial_envs)
+    {
+        auto eq_pos = env_str.find('=');
+        if(eq_pos != std::string::npos)
+        {
+            initial_map[env_str.substr(0, eq_pos)] = env_str.substr(eq_pos + 1);
+        }
+    }
+
+    for(const auto* env_entry : current_env)
+    {
+        if(env_entry == nullptr) continue;
+
+        std::string_view entry(env_entry);
+        auto             eq_pos = entry.find('=');
+        if(eq_pos == std::string_view::npos) continue;
+
+        std::string key(entry.substr(0, eq_pos));
+        std::string val(entry.substr(eq_pos + 1));
+
+        if(key.find("ROCPROFSYS_") != 0) continue;
+
+        auto it = initial_map.find(key);
+        if(it == initial_map.end() || it->second != val)
+        {
+            result[key] = val;
+        }
+    }
+    return result;
+}
+
+/**
+ * Export configuration to JSON file or stdout.
+ */
+inline void
+export_config(const std::vector<char*>&              current_env,
+              const std::unordered_set<std::string>& initial_envs,
+              const std::string& preset_name, const std::string& output_file = "")
+{
+    auto settings = collect_resolved_settings(current_env, initial_envs);
+    auto json_str = rocprofsys::json_config::export_config_as_json(settings, preset_name);
+
+    if(output_file.empty())
+    {
+        std::cout << json_str << std::endl;
+    }
+    else
+    {
+        std::ofstream ofs(output_file);
+        if(ofs.is_open())
+        {
+            ofs << json_str << std::endl;
+            std::cerr << "[rocprof-sys] Configuration exported to: " << output_file
+                      << std::endl;
+        }
+        else
+        {
+            std::cerr << "[rocprof-sys] ERROR: Could not write to: " << output_file
+                      << std::endl;
+        }
+    }
+}
+
+/**
+ * Apply a preset's settings using a caller-provided env update function.
+ * The callback signature is: void(const std::string& key, const std::string& val)
+ */
+template <typename EnvUpdaterFn>
+bool
+apply_preset_from_json(std::string_view preset_name, EnvUpdaterFn&& update_fn)
+{
+    auto info =
+        rocprofsys::preset_loader::load_preset_or_file(std::string{ preset_name });
+    if(!info) return false;
+
+    for(const auto& [key, val] : info->settings)
+    {
+        update_fn(key, val);
+    }
+    return true;
+}
+
+/**
+ * Run the shared post-parse validation sequence.
+ * Called by both run and sample after argument parsing.
+ */
+inline void
+run_post_parse_validation(std::string_view tool_name, std::string_view preset_name,
+                          bool gpu_enabled, bool rocm_enabled, bool cpu_enabled,
+                          bool parallel_enabled, int verbose_level)
+{
+    if(gpu_enabled || rocm_enabled)
+    {
+        warn_if_rocm_unavailable();
+    }
+
+    if(!preset_name.empty())
+    {
+        static const std::vector<std::string> gpu_presets = {
+            "workload-trace", "trace-hpc",    "sys-trace",        "runtime-trace",
+            "trace-gpu",      "trace-openmp", "trace-hw-counters"
+        };
+        for(const auto& preset : gpu_presets)
+        {
+            if(preset_name == preset)
+            {
+                warn_if_rocm_unavailable();
+                break;
+            }
+        }
+
+        if(verbose_level >= 1)
+        {
+            print_pre_execution_info(tool_name, preset_name);
+        }
+    }
+
+    warn_if_output_not_writable(tool_name);
+    validate_configuration(tool_name);
+    validate_domain_flags(gpu_enabled, rocm_enabled, cpu_enabled, parallel_enabled,
+                          preset_name);
 }
 
 }  // namespace common_utils
