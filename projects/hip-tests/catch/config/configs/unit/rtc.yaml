@@ -228,3 +228,9 @@ rtc:
   Unit_hiprtc_spirv_linker:
     <<: *level_2
     tags: [link]
+  Unit_hiprtc_spirv_compilation:
+    <<: *level_2
+    disabled: [amd_windows, amd_wsl]
+  Unit_hiprtc_spirv_linker:
+    <<: *level_2
+    disabled: [amd_windows, amd_wsl]
