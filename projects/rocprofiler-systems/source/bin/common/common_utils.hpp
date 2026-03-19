@@ -419,5 +419,61 @@ explain_preset(std::string_view preset_name, std::string_view tool_name)
     return true;
 }
 
+/**
+ * Validate domain flag combinations and print warnings for potential conflicts.
+ * @param gpu_enabled Whether --gpu flag was used
+ * @param rocm_enabled Whether --rocm flag was used
+ * @param cpu_enabled Whether --cpu flag was used
+ * @param parallel_enabled Whether --parallel flag was used
+ * @param preset_name The active preset name (empty if none)
+ */
+inline void
+validate_domain_flags(bool gpu_enabled, bool rocm_enabled, bool cpu_enabled,
+                      bool parallel_enabled, std::string_view preset_name)
+{
+    // Warn if --cpu is used with a preset that disables sampling
+    if(cpu_enabled && !preset_name.empty())
+    {
+        static const std::vector<std::string> no_sampling_presets = {
+            "trace-gpu", "trace-openmp", "workload-trace", "trace-hpc"
+        };
+        for(const auto& preset : no_sampling_presets)
+        {
+            if(preset_name == preset)
+            {
+                std::cerr << "[rocprof-sys][note] --cpu flag used with '" << preset_name
+                          << "' preset which disables CPU sampling.\n"
+                          << "  The --cpu flag will override the preset's sampling "
+                             "settings.\n";
+                break;
+            }
+        }
+    }
+
+    // Warn if --rocm is used without --gpu (may want GPU metrics too)
+    if(rocm_enabled && !gpu_enabled)
+    {
+        std::cerr << "[rocprof-sys][note] --rocm enables ROCm API tracing. Consider "
+                     "adding --gpu for GPU metrics.\n";
+    }
+
+    // Warn if --parallel is used without ROCm tracing (may miss GPU collective ops)
+    if(parallel_enabled && !rocm_enabled)
+    {
+        std::cerr << "[rocprof-sys][note] --parallel enables MPI/OpenMP profiling. "
+                     "Consider adding --rocm for GPU collective tracing.\n";
+    }
+
+    // Warn if multiple domain flags are used without a preset
+    int domain_count = (gpu_enabled ? 1 : 0) + (rocm_enabled ? 1 : 0) +
+                       (cpu_enabled ? 1 : 0) + (parallel_enabled ? 1 : 0);
+    if(domain_count >= 3 && preset_name.empty())
+    {
+        std::cerr << "[rocprof-sys][note] Multiple domain flags specified. Consider "
+                     "using a preset like --preset=detailed for comprehensive "
+                     "profiling.\n";
+    }
+}
+
 }  // namespace common_utils
 }  // namespace rocprofsys
