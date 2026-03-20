@@ -7,7 +7,6 @@
 
 #include <nlohmann/json.hpp>
 
-#include <initializer_list>
 #include <map>
 #include <string>
 #include <string_view>
@@ -53,27 +52,24 @@ void
 print_pre_execution_info(std::string_view tool_name, std::string_view preset_mode = "");
 
 // ============================================================================
-// Validation functions
+// Utility functions
 // ============================================================================
 
 /**
- * Collects active preset flags from an argument parser.
- * Template function to work with any parser type.
+ * Strips a leading "--" prefix from a preset name if present.
+ * Provides backwards compatibility with old --preset-name style flags.
  */
-template <typename ParserT>
-std::vector<std::string>
-collect_active_presets(ParserT& parser, std::initializer_list<const char*> preset_names)
+inline std::string
+strip_flag_prefix(std::string_view name)
 {
-    std::vector<std::string> active_presets;
-    for(const auto* name : preset_names)
-    {
-        if(parser.exists(name) && parser.template get<bool>(name))
-        {
-            active_presets.emplace_back(std::string("--") + name);
-        }
-    }
-    return active_presets;
+    if(name.size() > 2 && name.compare(0, 2, "--") == 0)
+        return std::string{ name.substr(2) };
+    return std::string{ name };
 }
+
+// ============================================================================
+// Validation functions
+// ============================================================================
 
 /**
  * Validates that only one preset mode is specified.
@@ -92,12 +88,6 @@ check_rocm_available();
  */
 void
 warn_if_rocm_unavailable();
-
-/**
- * Warns if a GPU preset is used without ROCm available.
- */
-void
-warn_if_gpu_preset_without_rocm(const std::vector<std::string>& active_presets);
 
 /**
  * Warns if the output directory is not writable.
@@ -157,11 +147,13 @@ collect_resolved_settings(const std::vector<char*>&              current_env,
 
 /**
  * Export configuration to JSON file or stdout.
+ * @param tool_name The tool name (e.g., "run", "sample") for metadata description.
  */
 void
 export_config(const std::vector<char*>&              current_env,
               const std::unordered_set<std::string>& initial_envs,
-              const std::string& preset_name, const std::string& output_file = "");
+              const std::string& preset_name, std::string_view tool_name,
+              const std::string& output_file = "");
 
 /**
  * Apply a preset's settings using a caller-provided env update function.
