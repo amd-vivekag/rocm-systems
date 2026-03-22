@@ -72,6 +72,9 @@ class TestExecutor:
         self._mpi_hostfile = None
         self._mpi_hostfile_detected = False
 
+        # MPI implementation: openmpi (default) or mpich (via --mpich flag)
+        self.mpi_impl = "mpich" if getattr(args, 'mpich', False) else "openmpi"
+
         # Detect MPI hosts: auto-detect from SLURM if "auto_detect_hosts" is true in config, otherwise use hostfile
         self.mpi_hosts = self._detect_mpi_hosts()
 
@@ -565,15 +568,24 @@ class TestExecutor:
                 f"{mca_params}"
             )
 
-            # Add environment variables for MPI
+            # Add environment variables for MPI (quote values to handle shell metacharacters like ;)
             for key, value in merged_env.items():
-                mpi_args += f" -x {key}={value}"
+                if self.mpi_impl == "mpich":
+                    mpi_args += f" -env {key} '{value}'"
+                else:
+                    mpi_args += f" -x {key}='{value}'"
 
             # Pass the LD_LIBRARY_PATH
-            mpi_args += f" -x LD_LIBRARY_PATH={env['LD_LIBRARY_PATH']}"
+            if self.mpi_impl == "mpich":
+                mpi_args += f" -env LD_LIBRARY_PATH {env['LD_LIBRARY_PATH']}"
+            else:
+                mpi_args += f" -x LD_LIBRARY_PATH={env['LD_LIBRARY_PATH']}"
 
             # Pass LLVM_PROFILE_FILE to MPI ranks for code coverage (prevents default.profraw collision)
-            mpi_args += f" -x LLVM_PROFILE_FILE=rccl_tests_%p_%m.profraw"
+            if self.mpi_impl == "mpich":
+                mpi_args += f" -env LLVM_PROFILE_FILE rccl_tests_%p_%m.profraw"
+            else:
+                mpi_args += f" -x LLVM_PROFILE_FILE=rccl_tests_%p_%m.profraw"
 
             # Build test command based on type
             if is_gtest:
