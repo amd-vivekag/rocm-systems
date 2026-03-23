@@ -30,8 +30,8 @@
 
 #include <algorithm>
 #include <atomic>
-#include <cctype>
 #include <cassert>
+#include <cctype>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
@@ -65,14 +65,14 @@ static bool IsKfdPidNamespaced() {
   int val = cached.load(std::memory_order_acquire);
   if (val >= 0) return val;
 
-  DIR *kfd_dir = opendir(kKFDProcPathRoot);
+  DIR* kfd_dir = opendir(kKFDProcPathRoot);
   if (!kfd_dir) {
     cached.store(0, std::memory_order_release);
     return false;
   }
 
   bool namespaced = false;
-  struct dirent *de;
+  struct dirent* de;
   while ((de = readdir(kfd_dir)) != nullptr) {
     std::string name(de->d_name);
     if (!is_number(name)) continue;
@@ -93,16 +93,16 @@ static bool IsKfdPidNamespaced() {
 
 // Enumerate container-local PIDs that have /dev/kfd open by scanning /proc.
 // Used as a fallback when KFD sysfs PIDs are not visible in this namespace.
-static int ScanProcForKfdPids(rsmi_process_info_t *procs,
+static int ScanProcForKfdPids(rsmi_process_info_t* procs,
                               uint32_t num_allocated,
-                              uint32_t *num_found) {
+                              uint32_t* num_found) {
   *num_found = 0;
 
-  DIR *proc_dir = opendir("/proc");
+  DIR* proc_dir = opendir("/proc");
   if (!proc_dir) return errno;
 
   const pid_t self = getpid();
-  struct dirent *dentry;
+  struct dirent* dentry;
 
   while ((dentry = readdir(proc_dir)) != nullptr) {
     std::string pid_str(dentry->d_name);
@@ -112,11 +112,11 @@ static int ScanProcForKfdPids(rsmi_process_info_t *procs,
     if (pid == static_cast<uint32_t>(self)) continue;
 
     std::string fd_dir_path = "/proc/" + pid_str + "/fd";
-    DIR *fd_dir = opendir(fd_dir_path.c_str());
+    DIR* fd_dir = opendir(fd_dir_path.c_str());
     if (!fd_dir) continue;
 
     bool has_kfd = false;
-    struct dirent *fd_entry;
+    struct dirent* fd_entry;
     while ((fd_entry = readdir(fd_dir)) != nullptr) {
       if (fd_entry->d_name[0] == '.') continue;
       std::string fd_link = fd_dir_path + "/" + fd_entry->d_name;
@@ -683,15 +683,15 @@ int GetProcessGPUs(uint32_t pid, std::unordered_set<uint64_t>* gpu_set) {
   // NOTE: Uses the first host-PID KFD entry found; assumes all container
   // processes share the same GPU set (valid for typical container deployments).
   if (gpu_set->empty() && IsKfdPidNamespaced()) {
-    DIR *kfd_proc_dir = opendir(kKFDProcPathRoot);
+    DIR* kfd_proc_dir = opendir(kKFDProcPathRoot);
     if (kfd_proc_dir) {
-      struct dirent *de;
+      struct dirent* de;
       while ((de = readdir(kfd_proc_dir)) != nullptr) {
         if (de->d_name[0] == '.') continue;
         std::string entry = de->d_name;
         if (!is_number(entry)) continue;
         std::string host_proc = std::string(kKFDProcPathRoot) + "/" + entry;
-        DIR *pd = opendir(host_proc.c_str());
+        DIR* pd = opendir(host_proc.c_str());
         if (pd) {
           struct dirent *pe;
           while ((pe = readdir(pd)) != nullptr) {
