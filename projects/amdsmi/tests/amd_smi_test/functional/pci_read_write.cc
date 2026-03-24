@@ -158,7 +158,7 @@ void TestPciReadWrite::Run(void) {
     IF_VERB(STANDARD) {
       std::cout << "\tSetting bandwidth mask to " << "0b" << freq_bm_str << " ..." << std::endl;
     }
-    ret =  amdsmi_set_gpu_pci_bandwidth(processor_handles_[dv_ind], freq_bitmask);
+    ret = amdsmi_set_gpu_pci_bandwidth(processor_handles_[dv_ind], freq_bitmask);
     if (ret == amdsmi_status_t::AMDSMI_STATUS_NOT_SUPPORTED) {
         auto status_string("");
         amdsmi_status_code_to_string(ret, &status_string);
