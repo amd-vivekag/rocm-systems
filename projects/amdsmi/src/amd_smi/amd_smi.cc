@@ -90,12 +90,6 @@ char proc_id[SIZE] = "\0";
     }                                \
   } while (0)
 
-#define GET_GPU_DEVICE_OR_RETURN(processor_handle, gpu_device)                     \
-  do {                                                                             \
-    amdsmi_status_t _r = get_gpu_device_from_handle(processor_handle, gpu_device); \
-    if (_r != AMDSMI_STATUS_SUCCESS) return _r;                                    \
-} while (0)
-
 static const std::map<amdsmi_accelerator_partition_type_t, std::string> partition_types_map = {
     {AMDSMI_ACCELERATOR_PARTITION_SPX, "SPX"}, {AMDSMI_ACCELERATOR_PARTITION_DPX, "DPX"},
     {AMDSMI_ACCELERATOR_PARTITION_TPX, "TPX"}, {AMDSMI_ACCELERATOR_PARTITION_QPX, "QPX"},
@@ -2210,8 +2204,11 @@ amdsmi_status_t amdsmi_get_fw_info(amdsmi_processor_handle processor_handle,
 
   AMDSMI_CHECK_INIT();
  
-  amd::smi::AMDSmiGPUDevice* gpu_device = nullptr;
-  GET_GPU_DEVICE_OR_RETURN(processor_handle, &gpu_device);
+    amd::smi::AMDSmiGPUDevice* gpu_device = nullptr;
+    amdsmi_status_t status = get_gpu_device_from_handle(processor_handle, &gpu_device);
+    if (status != AMDSMI_STATUS_SUCCESS) {
+        return status;
+    }
 
     if (info == nullptr) {
         return AMDSMI_STATUS_INVAL;
@@ -2560,9 +2557,10 @@ amdsmi_status_t amdsmi_get_gpu_kfd_info(amdsmi_processor_handle processor_handle
 
     // default to 0xffffffffffffffff as not supported
     amd::smi::AMDSmiGPUDevice* gpu_device = nullptr;
-    GET_GPU_DEVICE_OR_RETURN(processor_handle, &gpu_device);
-    
-    amdsmi_status_t status;
+    amdsmi_status_t status = get_gpu_device_from_handle(processor_handle, &gpu_device);
+    if (status != AMDSMI_STATUS_SUCCESS) {
+        return status;
+    }
     info->kfd_id = std::numeric_limits<uint64_t>::max();
     auto tmp_kfd_id = uint64_t(0);
     status = rsmi_wrapper(rsmi_dev_guid_get, processor_handle, 0,
