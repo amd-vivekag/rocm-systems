@@ -212,6 +212,8 @@ bool extractBuildLog(comgr_helper::ComgrDataSetUniqueHandle& dataSet, std::strin
     return false;
   }
 
+  LogPrintfInfo("extractBuildLog count : %d", count);
+
   std::vector<char> log;
   if (count > 0) {
     if (!extractByteCodeBinary(dataSet, AMD_COMGR_DATA_KIND_LOG, log)) return false;
@@ -222,35 +224,45 @@ bool extractBuildLog(comgr_helper::ComgrDataSetUniqueHandle& dataSet, std::strin
 
 bool extractByteCodeBinary(const comgr_helper::ComgrDataSetUniqueHandle& inDataSet,
                            const amd_comgr_data_kind_t dataKind, std::vector<char>& bin) {
-  amd_comgr_data_t binaryDataHandle;
+  // extract all data from dataSet
+  size_t count;
+  if (amd::Comgr::action_data_count(inDataSet.get(), dataKind, &count) != AMD_COMGR_STATUS_SUCCESS) {
+    return false;
+  } 
 
-  if (amd::Comgr::action_data_get_data(inDataSet.get(), dataKind, 0, &binaryDataHandle) !=
-      AMD_COMGR_STATUS_SUCCESS) {
+  if (count == 0) {
+    bin.clear();
     return false;
   }
-  comgr_helper::ComgrDataUniqueHandle binaryData(binaryDataHandle);
-  size_t binarySize = 0;
-  if (amd::Comgr::get_data(binaryData.get(), &binarySize, NULL) != AMD_COMGR_STATUS_SUCCESS) {
+
+  for (size_t idx = 0; idx < count; ++idx) {
+    amd_comgr_data_t binaryDataHandle;
+    if (amd::Comgr::action_data_get_data(inDataSet.get(), dataKind, idx, &binaryDataHandle) !=
+        AMD_COMGR_STATUS_SUCCESS) {
+      return false;
+    }
+    comgr_helper::ComgrDataUniqueHandle binaryData(binaryDataHandle);
+    size_t binarySize = 0;
+    if (amd::Comgr::get_data(binaryData.get(), &binarySize, NULL) != AMD_COMGR_STATUS_SUCCESS) {
     return false;
-  }
+    }
 
-  size_t bufSize = (dataKind == AMD_COMGR_DATA_KIND_LOG) ? binarySize + 1 : binarySize;
+    size_t bufSize = (dataKind == AMD_COMGR_DATA_KIND_LOG) ? binarySize + 1 : binarySize;
+    char* binary = new char[bufSize];
+    if (amd::Comgr::get_data(binaryData.get(), &binarySize, binary) != AMD_COMGR_STATUS_SUCCESS) {
+      delete[] binary;
+      return false;
+    }
 
-  char* binary = new char[bufSize];
-  if (amd::Comgr::get_data(binaryData.get(), &binarySize, binary) != AMD_COMGR_STATUS_SUCCESS) {
+    if (dataKind == AMD_COMGR_DATA_KIND_LOG) {
+      binary[binarySize] = '\0';
+    }
+
+    std::vector<char> temp_bin;
+    temp_bin.assign(binary, binary + binarySize);
+    bin = temp_bin;
     delete[] binary;
-    return false;
   }
-
-  if (dataKind == AMD_COMGR_DATA_KIND_LOG) {
-    binary[binarySize] = '\0';
-  }
-
-  std::vector<char> temp_bin;
-  temp_bin.assign(binary, binary + binarySize);
-  bin = temp_bin;
-  delete[] binary;
-
   return true;
 }
 
@@ -487,6 +499,13 @@ bool convertSPIRVToLLVMBC(const comgr_helper::ComgrDataSetUniqueHandle& linkInpu
   if (output.Create() != AMD_COMGR_STATUS_SUCCESS) {
     return false;
   }
+
+  size_t count = 0;
+  if (amd::Comgr::action_data_count(linkInputs.get(), AMD_COMGR_DATA_KIND_SPIRV, &count) != AMD_COMGR_STATUS_SUCCESS) {
+    return false;
+  }
+
+  LogPrintfInfo("convertSPIRVToLLVMBC count : %d", count);
 
   if (amd::Comgr::do_action(AMD_COMGR_ACTION_TRANSLATE_SPIRV_TO_BC, action.get(), linkInputs.get(),
                             output.get()) != AMD_COMGR_STATUS_SUCCESS) {
