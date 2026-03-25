@@ -6,9 +6,22 @@ Full documentation for ROCm Systems Profiler is available at [https://rocm.docs.
 
 ## ROCm Systems Profiler 1.6.0 for ROCm 7.13.0
 
+### Added
+
+- JSON-based configurable preset system with `--preset=<name>` flag, replacing the old `--<preset-name>` flags. Presets are now loaded from JSON files in `share/rocprofiler-systems/presets/`, making them extensible and exportable. Use `--list-presets` to see available presets and `--explain=<name>` for detailed preset information.
+- Domain flags for composable configuration: `--gpu[=metrics]`, `--rocm[=domains]`, `--cpu[=hz]`, `--parallel[=runtimes]`. Domain flags can be combined with presets to customize profiling without editing configuration files.
+- Configuration export via `--export-config[=file]` to save resolved settings as reusable JSON configuration files. Exported configs can be loaded back with `--preset=./config.json`.
+- Topic-based help system: `--help` now shows a compact summary with essential options and a list of help topics. Use `--help=<topic>` (e.g., `--help=sampling`, `--help=gpu`, `--help=tracing`) to see only relevant options. Use `--help=all` for the full option listing.
+- Pre-run validation warnings for output directory writability, ROCm availability, and configuration conflicts.
+- Post-run output summary during library finalization showing result file locations.
+- Shared `rocprofiler-systems-bin-common` static library with `preset_registry` class, eliminating code duplication between `rocprof-sys-run` and `rocprof-sys-sample`.
+- JSON schema file (`share/rocprofiler-systems/presets/schema.json`) for preset validation.
+- Unit tests for JSON config resolution, preset registry, and help system (445 tests total).
+
 ### Changed
 
 - `rocprof-sys-avail` no longer queries GPU devices or hardware counters unless `--hw-counters` or `--all` is requested, reducing startup time and allowing settings/component queries in environments without GPU/ROCm.
+- Preset flags changed from `--balanced` to `--preset=balanced` syntax. The old `--<preset-name>` flags are no longer supported. Use `--preset=<name>` instead.
 
 ## ROCm Systems Profiler 1.5.0 for ROCm 7.12.0
 
