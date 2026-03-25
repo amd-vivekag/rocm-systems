@@ -486,6 +486,260 @@ struct arg_indices;
 HSA_ASYNC_COPY_DEFINE_ARG_INDICES(async_copy_id, 1, 3, 7, 4, 0, 2)
 HSA_ASYNC_COPY_DEFINE_ARG_INDICES(async_copy_on_engine_id, 1, 3, 7, 4, 0, 2)
 HSA_ASYNC_COPY_DEFINE_ARG_INDICES(async_copy_rect_id, 5, 5, 9, 4, 0, 2)
+// Note: hsa_amd_memory_async_batch_copy does NOT use HSA_ASYNC_COPY_DEFINE_ARG_INDICES
+// because it has a different signature - it takes an array of hsa_amd_memory_copy_op_t
+// where each operation has its own src_agent, dst_agent, and completion_signal embedded
+// in the structure.
+
+rocprofiler_memory_copy_operation_t
+get_batch_copy_direction(hsa_agent_t src_agent, hsa_agent_t dst_agent)
+{
+    auto _rocp_src_agent = agent::get_rocprofiler_agent(src_agent);
+    auto _rocp_dst_agent = agent::get_rocprofiler_agent(dst_agent);
+
+    if(_rocp_src_agent && _rocp_dst_agent)
+    {
+        if(_rocp_src_agent->type == ROCPROFILER_AGENT_TYPE_CPU)
+        {
+            if(_rocp_dst_agent->type == ROCPROFILER_AGENT_TYPE_CPU)
+                return ROCPROFILER_MEMORY_COPY_HOST_TO_HOST;
+            else if(_rocp_dst_agent->type == ROCPROFILER_AGENT_TYPE_GPU)
+                return ROCPROFILER_MEMORY_COPY_HOST_TO_DEVICE;
+        }
+        else if(_rocp_src_agent->type == ROCPROFILER_AGENT_TYPE_GPU)
+        {
+            if(_rocp_dst_agent->type == ROCPROFILER_AGENT_TYPE_CPU)
+                return ROCPROFILER_MEMORY_COPY_DEVICE_TO_HOST;
+            else if(_rocp_dst_agent->type == ROCPROFILER_AGENT_TYPE_GPU)
+                return ROCPROFILER_MEMORY_COPY_DEVICE_TO_DEVICE;
+        }
+    }
+    return ROCPROFILER_MEMORY_COPY_NONE;
+}
+
+// Extract copy size from operation based on type
+uint64_t
+get_batch_copy_size(const hsa_amd_memory_copy_op_t& op)
+{
+    auto type = static_cast<hsa_amd_memory_copy_op_type_t>(op.type);
+    switch(type)
+    {
+        case HSA_AMD_MEMORY_COPY_OP_LINEAR:
+            if(op.num_dsts > 0)
+            {
+                // Multi-destination linear: sum of all sizes in size_list
+                uint64_t total = 0;
+                if(op.size_list)
+                {
+                    for(uint32_t i = 0; i <= op.num_dsts; ++i)
+                    {
+                        total += op.size_list[i];
+                    }
+                }
+                return total;
+            }
+            return op.size;
+        case HSA_AMD_MEMORY_COPY_OP_LINEAR_BROADCAST: return op.size;
+        case HSA_AMD_MEMORY_COPY_OP_LINEAR_SWAP: return op.src_size + op.dst_size;
+        case HSA_AMD_MEMORY_COPY_OP_LINEAR_INDIRECT_SRC:
+        case HSA_AMD_MEMORY_COPY_OP_LINEAR_INDIRECT_DST:
+        case HSA_AMD_MEMORY_COPY_OP_LINEAR_INDIRECT_SRCDST: return op.size;
+        default: return op.size;
+    }
+}
+
+// mem batch copy implementation
+hsa_status_t
+async_copy_batch_impl(const hsa_amd_memory_copy_op_t* copy_ops,
+                      uint32_t                        num_copy_ops,
+                      uint32_t                        num_dep_signals,
+                      const hsa_signal_t*             dep_signals)
+{
+    constexpr auto TableIdx = ROCPROFILER_HSA_TABLE_ID_AmdExt;
+    constexpr auto OpIdx    = ROCPROFILER_HSA_AMD_EXT_API_ID_hsa_amd_memory_async_batch_copy;
+
+    // Check if any context is interested in memory copy tracing
+    auto any_tracing = false;
+    for(auto direction = ROCPROFILER_MEMORY_COPY_NONE; direction < ROCPROFILER_MEMORY_COPY_LAST;
+        direction = static_cast<rocprofiler_memory_copy_operation_t>(direction + 1))
+    {
+        auto tracing_data = tracing::tracing_data{};
+        tracing::populate_contexts(ROCPROFILER_CALLBACK_TRACING_MEMORY_COPY,
+                                   ROCPROFILER_BUFFER_TRACING_MEMORY_COPY,
+                                   direction,
+                                   tracing_data);
+        if(!tracing_data.empty())
+        {
+            any_tracing = true;
+            break;
+        }
+    }
+
+    // If no tracing, execute directly
+    if(!any_tracing || num_copy_ops == 0)
+    {
+        return get_next_dispatch<TableIdx, OpIdx>()(copy_ops, num_copy_ops, num_dep_signals, dep_signals);
+    }
+
+    // Create a modified copy of operations to intercept completion signals
+    auto modified_ops = std::vector<hsa_amd_memory_copy_op_t>(copy_ops, copy_ops + num_copy_ops);
+    auto copy_data_list = std::vector<async_copy_data*>(num_copy_ops, nullptr);
+    auto tid = common::get_tid();
+
+    // Get or create correlation id
+    auto* base_correlation_id = context::get_latest_correlation_id();
+    context::correlation_id* corr_id_pop = nullptr;
+
+    if(!base_correlation_id)
+    {
+        constexpr auto ref_count = 1;
+        base_correlation_id = context::correlation_tracing_service::construct(ref_count);
+        corr_id_pop = base_correlation_id;
+    }
+
+    if(!base_correlation_id)
+    {
+        // During finalization - execute without tracing
+        return get_next_dispatch<TableIdx, OpIdx>()(copy_ops, num_copy_ops, num_dep_signals, dep_signals);
+    }
+
+    auto corr_id_dtor = common::scope_destructor{[corr_id_pop]() {
+        if(corr_id_pop)
+        {
+            context::pop_latest_correlation_id(corr_id_pop);
+            corr_id_pop->sub_ref_count();
+        }
+    }};
+
+    // Process each operation
+    for(uint32_t i = 0; i < num_copy_ops; ++i)
+    {
+        auto& op = modified_ops[i];
+
+        // Skip operations without completion signals
+        if(op.completion_signal.handle == 0)
+        {
+            continue;
+        }
+
+        // Determine direction based on operation type
+        auto direction = get_batch_copy_direction(op.src_agent, op.dst_agent);
+
+        // Check if this direction is being traced
+        auto tracing_data = tracing::tracing_data{};
+        tracing::populate_contexts(ROCPROFILER_CALLBACK_TRACING_MEMORY_COPY,
+                                   ROCPROFILER_BUFFER_TRACING_MEMORY_COPY,
+                                   direction,
+                                   tracing_data);
+
+        if(tracing_data.empty())
+        {
+            continue;
+        }
+
+        // Create async_copy_data for this operation
+        auto* data = new async_copy_data{};
+        data->tracing_data = std::move(tracing_data);
+        data->tid = tid;
+        data->direction = direction;
+        data->bytes_copied = get_batch_copy_size(op);
+
+        // Get agent IDs
+        auto _rocp_src_agent = agent::get_rocprofiler_agent(op.src_agent);
+        auto _rocp_dst_agent = agent::get_rocprofiler_agent(op.dst_agent);
+
+        if(_rocp_src_agent)
+            data->src_agent = _rocp_src_agent->id;
+        if(_rocp_dst_agent)
+            data->dst_agent = _rocp_dst_agent->id;
+
+        // Get addresses based on operation type
+        auto type = static_cast<hsa_amd_memory_copy_op_type_t>(op.type);
+        if(type == HSA_AMD_MEMORY_COPY_OP_LINEAR && op.num_dsts > 0)
+        {
+            // Multi-destination: use list pointers
+            data->src_address = rocprofiler_address_t{.ptr = op.src_list ? op.src_list[0] : nullptr};
+            data->dst_address = rocprofiler_address_t{.ptr = op.dst_list ? op.dst_list[0] : nullptr};
+        }
+        else if(type == HSA_AMD_MEMORY_COPY_OP_LINEAR_BROADCAST)
+        {
+            data->src_address = rocprofiler_address_t{.ptr = op.src};
+            data->dst_address = rocprofiler_address_t{.ptr = op.dst_list ? op.dst_list[0] : nullptr};
+        }
+        else
+        {
+            data->src_address = rocprofiler_address_t{.ptr = op.src};
+            data->dst_address = rocprofiler_address_t{.ptr = op.dst};
+        }
+
+        // Store original signal
+        data->orig_signal = op.completion_signal;
+
+        // Create replacement signal
+        const hsa_signal_value_t signal_val = 1;
+        auto status = get_core_table()->hsa_signal_create_fn(signal_val, 0, nullptr, &data->rocp_signal);
+
+        if(status != HSA_STATUS_SUCCESS)
+        {
+            ROCP_ERROR << "hsa_signal_create failed for batch copy operation " << i;
+            delete data;
+            continue;
+        }
+
+        // Set up async handler
+        status = get_amd_ext_table()->hsa_amd_signal_async_handler_fn(
+            data->rocp_signal, HSA_SIGNAL_CONDITION_LT, signal_val, async_copy_handler, data);
+
+        if(status != HSA_STATUS_SUCCESS)
+        {
+            ROCP_ERROR << "hsa_amd_signal_async_handler failed for batch copy operation " << i;
+            get_core_table()->hsa_signal_destroy_fn(data->rocp_signal);
+            delete data;
+            continue;
+        }
+
+        // Set up correlation id
+        data->correlation_id = base_correlation_id;
+        data->correlation_id->add_ref_count();
+
+        // Populate external correlation ids
+        tracing::populate_external_correlation_ids(
+            data->tracing_data.external_correlation_ids,
+            data->correlation_id->thread_idx,
+            ROCPROFILER_EXTERNAL_CORRELATION_REQUEST_MEMORY_COPY,
+            direction,
+            data->correlation_id->internal);
+
+        // Execute enter callbacks
+        if(!data->tracing_data.callback_contexts.empty())
+        {
+            auto tracer_data = data->get_callback_data();
+            tracing::execute_phase_enter_callbacks(data->tracing_data.callback_contexts,
+                                                   data->correlation_id->thread_idx,
+                                                   data->correlation_id->internal,
+                                                   data->tracing_data.external_correlation_ids,
+                                                   data->correlation_id->ancestor,
+                                                   ROCPROFILER_CALLBACK_TRACING_MEMORY_COPY,
+                                                   direction,
+                                                   tracer_data);
+        }
+
+        // Replace signal in the operation
+        op.completion_signal = data->rocp_signal;
+        copy_data_list[i] = data;
+        data->start_ts = common::timestamp_ns();
+
+        CHECK_NOTNULL(get_active_signals())->fetch_add(1);
+
+        ROCP_INFO << "Batch copy op " << i << " Original Signal " << std::hex
+                  << data->orig_signal.handle << " | Replacement Signal: "
+                  << op.completion_signal.handle << std::dec;
+    }
+
+    // Execute the batch copy with modified operations
+    return get_next_dispatch<TableIdx, OpIdx>()(
+        modified_ops.data(), num_copy_ops, num_dep_signals, dep_signals);
+}
 
 template <typename FuncT, typename ArgsT, size_t... Idx>
 decltype(auto)
@@ -829,8 +1083,73 @@ async_copy_wrap(hsa_amd_ext_table_t* _orig, std::index_sequence<OpIdx...>)
     (async_copy_wrap<TableIdx, OpIdx>(_orig), ...);
 }
 
+// Explicit specializations for batch copy - must come after primary template definitions
+// These are needed because batch copy has a different signature and doesn't use arg_indices
+#if HSA_AMD_EXT_API_TABLE_STEP_VERSION >= 0x0A
+template <>
+void
+async_copy_save<ROCPROFILER_HSA_TABLE_ID_AmdExt,
+                ROCPROFILER_HSA_AMD_EXT_API_ID_hsa_amd_memory_async_batch_copy>(
+    hsa_amd_ext_table_t* _orig, uint64_t _tbl_instance)
+{
+    constexpr auto TableIdx = ROCPROFILER_HSA_TABLE_ID_AmdExt;
+    constexpr auto OpIdx = ROCPROFILER_HSA_AMD_EXT_API_ID_hsa_amd_memory_async_batch_copy;
+
+    auto _meta = hsa_api_meta<TableIdx, OpIdx>{};
+    auto& _orig_table = _meta.get_table(_orig);
+    auto& _orig_func = _meta.get_table_func(_orig_table);
+    auto& _copy_func = get_next_dispatch<TableIdx, OpIdx>();
+
+    ROCP_FATAL_IF(_copy_func && _tbl_instance == 0)
+        << _meta.name << " has non-null function pointer " << _copy_func
+        << " despite this being the first instance of the library being copies";
+
+    if(!_copy_func)
+    {
+        ROCP_TRACE << "copying table entry for " << _meta.name;
+        _copy_func = _orig_func;
+    }
+    else
+    {
+        ROCP_TRACE << "skipping copying table entry for " << _meta.name
+                   << " from table instance " << _tbl_instance;
+    }
+}
+
+template <>
+void
+async_copy_wrap<ROCPROFILER_HSA_TABLE_ID_AmdExt,
+                ROCPROFILER_HSA_AMD_EXT_API_ID_hsa_amd_memory_async_batch_copy>(
+    hsa_amd_ext_table_t* _orig)
+{
+    constexpr auto TableIdx = ROCPROFILER_HSA_TABLE_ID_AmdExt;
+    constexpr auto OpIdx = ROCPROFILER_HSA_AMD_EXT_API_ID_hsa_amd_memory_async_batch_copy;
+
+    auto _meta = hsa_api_meta<TableIdx, OpIdx>{};
+    auto& _table = _meta.get_table(_orig);
+    auto& _func = _meta.get_table_func(_table);
+
+    auto& _dispatch = get_next_dispatch<TableIdx, OpIdx>();
+    // Runtime backward compatibility: skip wrapping if function is not available
+    // (e.g., on older ROCm versions that don't have batch copy support)
+    if(!_dispatch)
+    {
+        ROCP_TRACE << "skipping wrapping for " << _meta.name << " - function not available";
+        return;
+    }
+    _func = async_copy_batch_impl;
+}
+#endif
+
+#if HSA_AMD_EXT_API_TABLE_STEP_VERSION >= 0x0A
+constexpr auto async_copy_batch_id =
+    ROCPROFILER_HSA_AMD_EXT_API_ID_hsa_amd_memory_async_batch_copy;
+using async_copy_index_seq_t =
+    std::index_sequence<async_copy_id, async_copy_on_engine_id, async_copy_rect_id, async_copy_batch_id>;
+#else
 using async_copy_index_seq_t =
     std::index_sequence<async_copy_id, async_copy_on_engine_id, async_copy_rect_id>;
+#endif
 }  // namespace
 
 // check out the assembly here... this compiles to a switch statement
