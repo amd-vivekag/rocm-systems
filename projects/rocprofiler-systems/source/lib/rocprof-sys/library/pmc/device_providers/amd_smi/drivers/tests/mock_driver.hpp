@@ -20,7 +20,7 @@ namespace rocprofsys::pmc::drivers::amd_smi::testing
  * and default behaviors via set_up_defaults().
  *
  * Used by both provider-level tests and device collector tests (aliased as MockDriver
- * in test_device.cpp for compatibility).
+ * in GPU device tests (see test_device_*.cpp) for compatibility).
  */
 class mock_driver
 {
