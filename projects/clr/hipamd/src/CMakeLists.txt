@@ -188,12 +188,18 @@ endif()
 # Short-Term solution for pre-compiled headers for online compilation
 # Enable pre compiled header
 if(__HIP_ENABLE_PCH)
-  find_package(LLVM REQUIRED CONFIG
-    HINTS
-      ${ROCM_PATH}/llvm)
-  # find_package(LLVM) returns the lib/cmake/llvm location. We require the root.
+  set(CXX_COMPILER_DIR)
+  if(CXX_COMPILER_NAME MATCHES "^clang\\+\\+$|^clang$")
+    get_filename_component(CXX_COMPILER_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
+  endif()
+  find_program(CLANG_EXEC
+    NAMES clang
+    PATHS ${ROCM_PATH}/lib/llvm/bin ${CXX_COMPILER_DIR}
+    NO_DEFAULT_PATH
+    REQUIRED)
+  get_filename_component(CLANG_BIN_DIR ${CLANG_EXEC} DIRECTORY)
   if(NOT DEFINED HIP_LLVM_ROOT)
-    set(HIP_LLVM_ROOT "${LLVM_DIR}/../../..")
+	  set(HIP_LLVM_ROOT "${CLANG_BIN_DIR}/..")
   endif()
 
   execute_process(COMMAND sh -c "${CMAKE_CURRENT_SOURCE_DIR}/hip_embed_pch.sh ${HIP_COMMON_INCLUDE_DIR} ${PROJECT_BINARY_DIR}/include ${PROJECT_SOURCE_DIR}/include ${HIP_LLVM_ROOT}" COMMAND_ECHO STDERR RESULT_VARIABLE EMBED_PCH_RC WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -292,7 +298,7 @@ endif()
 if(HIP_ENABLE_ROCPROFILER_REGISTER)
     find_package(rocprofiler-register REQUIRED
         HINTS $ENV{rocprofiler_register_ROOT} $ENV{ROCPROFILER_REGISTER_ROOT} ${CMAKE_INSTALL_PREFIX}
-        PATHS /opt/rocm)
+        PATHS ${ROCM_PATH})
 
     # don't use HIP_VERSION_PATCH because it is too large (> 100) for rocprofiler register
     target_compile_definitions(amdhip64 PRIVATE HIP_ROCPROFILER_REGISTER=1
