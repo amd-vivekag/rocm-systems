@@ -55,7 +55,7 @@ void
 stop();
 
 void
-reset_state();
+reset_sdk_session_guards();
 
 std::vector<hardware_counter_info>
 get_rocm_events_info();

@@ -50,6 +50,7 @@
 #include "logger/debug.hpp"
 
 #include <atomic>
+#include <mutex>
 
 namespace rocprofsys
 {
@@ -164,6 +165,8 @@ initialize_amdsmi()
 bool
 reinitialize_amdsmi()
 {
+    static std::mutex           mtx;
+    std::lock_guard<std::mutex> lock(mtx);
     amdsmi_initialized.store(false);
     return amdsmi_init();
 }

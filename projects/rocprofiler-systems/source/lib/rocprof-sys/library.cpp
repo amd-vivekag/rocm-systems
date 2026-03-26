@@ -117,16 +117,13 @@ setup() ROCPROFSYS_INTERNAL_API;
 }
 }  // namespace rocprofsys
 
-// Initialization and finalization guards - resettable to support re-attachment.
-// These are extern-accessible for rocprofiler-sdk re-attach support.
+namespace
+{
 std::atomic<bool>  rocprofsys_init_library_done{ false };
 std::atomic<pid_t> rocprofsys_init_tooling_done{ 0 };
 std::atomic<bool>  rocprofsys_finalization_done{ false };
-
-namespace
-{
-auto _timemory_manager  = tim::manager::instance();
-auto _timemory_settings = tim::settings::shared_instance();
+auto               _timemory_manager  = tim::manager::instance();
+auto               _timemory_settings = tim::settings::shared_instance();
 
 void
 set_metadata_process_start_timestamp(int64_t _ts)
@@ -487,7 +484,7 @@ rocprofsys_init_library_hidden()
             fmt::format("State is not PreInit :: {}", std::to_string(get_state())));
     }
 
-    if(get_state() != State::PreInit || get_state() == State::Init) return;
+    if(get_state() != State::PreInit) return;
     if(rocprofsys_init_library_done.exchange(true)) return;
 
     ROCPROFSYS_SCOPED_THREAD_STATE(ThreadState::Internal);
@@ -554,10 +551,11 @@ rocprofsys_init_tooling_hidden(void)
         LOG_DEBUG("State is {}...", std::to_string(get_state()));
     }
 
-    if(get_state() != State::PreInit || get_state() == State::Init ||
-       rocprofsys_init_tooling_done.load() == getpid())
+    if(get_state() != State::PreInit) return false;
+
+    pid_t expected = 0;
+    if(!rocprofsys_init_tooling_done.compare_exchange_strong(expected, getpid()))
         return false;
-    rocprofsys_init_tooling_done.store(getpid());
 
     ROCPROFSYS_SCOPED_THREAD_STATE(ThreadState::Internal);
 
@@ -1182,6 +1180,15 @@ extern "C" void
 rocprofsys_set_finalization_done_hidden(void)
 {
     rocprofsys_finalization_done.store(true);
+}
+
+extern "C" void
+rocprofsys_reset_for_reattach_hidden(void)
+{
+    rocprofsys_finalization_done.store(false);
+    rocprofsys_init_library_done.store(false);
+    rocprofsys_init_tooling_done.store(0);
+    ::rocprofsys::reset_state();
 }
 
 //======================================================================================//

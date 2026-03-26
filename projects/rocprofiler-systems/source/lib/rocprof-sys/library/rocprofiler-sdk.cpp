@@ -11,6 +11,7 @@
 #include "core/demangler.hpp"
 #include "core/gpu.hpp"
 #include "core/perfetto.hpp"
+#include "core/perfetto_fwd.hpp"
 #include "core/state.hpp"
 #include "core/trace_cache/buffer_storage.hpp"
 #include "core/trace_cache/cache_manager.hpp"
@@ -18,6 +19,7 @@
 #include "core/trace_cache/sample_type.hpp"
 #include "library/amd_smi.hpp"
 #include "library/components/category_region.hpp"
+#include "library/process_sampler.hpp"
 #include "library/rocprofiler-sdk.hpp"
 #include "library/rocprofiler-sdk/counters.hpp"
 #include "library/rocprofiler-sdk/fwd.hpp"
@@ -2664,16 +2666,11 @@ tool_init(rocprofiler_client_finalize_t fini_func, void* user_data)
 }
 
 void
-tool_fini(void* callback_data)
+finalize_sdk_common()
 {
-    if(tool_fini_done.exchange(true)) return;
-
 #if(ROCPROFILER_VERSION >= 600)
     ompt_finalize_orphan_events();
 #endif
-
-    flush();
-    stop();
 
     if(config::get_use_process_sampling() && config::get_use_amd_smi())
         amd_smi::shutdown();
@@ -2684,6 +2681,16 @@ tool_fini(void* callback_data)
         delete get_counter_storage();
         get_counter_storage() = nullptr;
     }
+}
+
+void
+tool_fini(void* callback_data)
+{
+    if(tool_fini_done.exchange(true)) return;
+
+    flush();
+    stop();
+    finalize_sdk_common();
 
     auto* _data        = as_client_data(callback_data);
     _data->client_id   = nullptr;
@@ -2694,7 +2701,7 @@ tool_fini(void* callback_data)
 }  // namespace
 
 void
-reset_state()
+reset_sdk_session_guards()
 {
     tool_fini_done.store(false);
     tool_init_done.store(false);
@@ -2772,27 +2779,11 @@ get_rocm_events_info()
 void
 tool_attach_fini(void* /* tool_data */)
 {
-    // Prevent rocprofsys_finalize_hidden() from running concurrently (e.g., from atexit)
-    rocprofsys_set_finalization_done_hidden();
-
     // Stop and flush SDK contexts/buffers so that buffer callbacks
     // write their Perfetto events before Perfetto post-processing.
     ::rocprofsys::rocprofiler_sdk::stop();
     ::rocprofsys::rocprofiler_sdk::flush();
-
-#    if(ROCPROFILER_VERSION >= 600)
-    rocprofsys::rocprofiler_sdk::ompt_finalize_orphan_events();
-#    endif
-
-    if(config::get_use_process_sampling() && config::get_use_amd_smi())
-        amd_smi::shutdown();
-
-    if(get_counter_storage())
-    {
-        get_counter_storage()->clear();
-        delete get_counter_storage();
-        get_counter_storage() = nullptr;
-    }
+    finalize_sdk_common();
 
     // Flush any pending region cache entries
     rocprofsys_flush_pending_region_cache_hidden();
@@ -2819,16 +2810,21 @@ tool_attach_init([[maybe_unused]] rocprofiler_client_detach_t detach_func,
 
     if(current_count > 1)
     {
-        // Re-attach: reset all guards to allow reinitialization
-        rocprofsys_finalization_done.store(false);
-        rocprofsys_init_library_done.store(false);
-        rocprofsys_init_tooling_done.store(0);
-        ::rocprofsys::reset_state();
-        reset_state();
-        LOG_DEBUG("Reset all guards for re-attach");
+        LOG_INFO("Re-attaching to process {} (session {})", getpid(), current_count);
+        rocprofsys_reset_for_reattach_hidden();
+        reset_sdk_session_guards();
 
         // Restart Perfetto for a new tracing session
         if(get_use_perfetto()) ::rocprofsys::perfetto::start();
+
+        trace_cache::get_buffer_storage().start(getpid());
+
+        // Restart process sampler (AMD SMI, CPU freq polling thread)
+        if(config::get_use_process_sampling())
+        {
+            ROCPROFSYS_SCOPED_SAMPLING_ON_CHILD_THREADS(false);
+            process_sampler::setup();
+        }
 
         ::rocprofsys::set_state(::rocprofsys::State::Active);
     }
