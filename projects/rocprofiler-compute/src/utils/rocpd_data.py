@@ -58,6 +58,36 @@ TABLE_NAME_PREFIX_QUERY = (
     "AND name LIKE '{table_name_prefix}%'"
 )
 INSERT_QUERY = "INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
+COUNTER_COLLECTION_COLUMNS = [
+    "GPU_ID",
+    "GUID",
+    "Correlation_Id",
+    "Dispatch_ID",
+    "PID",
+    "Grid_Size",
+    "Workgroup_Size",
+    "LDS_Per_Workgroup",
+    "Scratch_Per_Workitem",
+    "Arch_VGPR",
+    "Accum_VGPR",
+    "SGPR",
+    "Kernel_Name",
+    "Start_Timestamp",
+    "End_Timestamp",
+    "Kernel_ID",
+    "Counter_Name",
+    "Counter_Value",
+]
+MARKER_TRACE_COLUMNS = [
+    "Domain",
+    "Function",
+    "Process_Id",
+    "Thread_Id",
+    "Correlation_Id",
+    "GUID",
+    "Start_Timestamp",
+    "End_Timestamp",
+]
 
 
 def convert_dbs_to_csv(
@@ -99,6 +129,33 @@ def convert_dbs_to_csv(
                             f"Unexpected error while extracting {file_path} "
                             f"from {db_path}: {e}"
                         )
+
+
+def load_dbs_to_dataframes(db_paths: list[str]) -> tuple[pd.DataFrame, pd.DataFrame]:
+    counter_frames: list[pd.DataFrame] = []
+    marker_frames: list[pd.DataFrame] = []
+
+    for db_path in db_paths:
+        try:
+            with closing(sqlite3.connect(db_path)) as conn:
+                counter_frames.append(pd.read_sql_query(COUNTERS_COLLECTION_QUERY, conn))
+                marker_frames.append(pd.read_sql_query(MARKER_API_TRACE_QUERY, conn))
+        except OSError as e:
+            console_error(f"Database error while extracting data from {db_path}: {e}")
+        except Exception as e:
+            console_error(f"Unexpected error while extracting data from {db_path}: {e}")
+
+    if counter_frames:
+        counter_df = pd.concat(counter_frames, ignore_index=True)
+    else:
+        counter_df = pd.DataFrame(columns=COUNTER_COLLECTION_COLUMNS)
+
+    if marker_frames:
+        marker_df = pd.concat(marker_frames, ignore_index=True)
+    else:
+        marker_df = pd.DataFrame(columns=MARKER_TRACE_COLUMNS)
+
+    return counter_df, marker_df
 
 
 def process_rocpd_csv(df: pd.DataFrame) -> pd.DataFrame:

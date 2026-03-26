@@ -182,12 +182,17 @@ def run_prof(
     results_files: list[str] = []
 
     if format_rocprof_output == "rocpd":
+        db_paths = glob.glob(workload_dir + "/out/pmc_1/*/*.db")
+        pmc_csv_path = workload_dir + f"/out/pmc_1/{fbase}_counter_collection.csv"
+        marker_csv_path = workload_dir + f"/out/pmc_1/{fbase}_marker_api_trace.csv"
+
         # If using native tool for counter collection
         if (
             get_rocprof_cmd() == "rocprofiler-sdk"
             and options["ROCPROF_COUNTER_COLLECTION"] == "0"
         ):
-            for db_name in glob.glob(workload_dir + "/out/pmc_1/*/*.db"):
+            t_native_start = time.time()
+            for db_name in db_paths:
                 pid = Path(db_name).stem.split("_")[0]
                 rocpd_data.update_rocpd_pmc_events(
                     pd.read_csv(
@@ -196,17 +201,20 @@ def run_prof(
                     db_name,
                 )
                 console_debug(f"Updated rocpd db {db_name} with native tool counters.")
-        # Write results_fbase.csv
-        rocpd_data.convert_dbs_to_csv(
-            glob.glob(workload_dir + "/out/pmc_1/*/*.db"),
-            workload_dir + f"/out/pmc_1/{fbase}_counter_collection.csv",
-            workload_dir + f"/out/pmc_1/{fbase}_marker_api_trace.csv",
+            console_log(
+                f"[TIMING] update_rocpd_pmc_events: {time.time() - t_native_start:.1f}s"
+            )
+
+        t_load_start = time.time()
+        combined_df, marker_df = rocpd_data.load_dbs_to_dataframes(db_paths)
+        console_log(
+            f"[TIMING] load_rocpd_dataframes ({len(combined_df)} rows): "
+            f"{time.time() - t_load_start:.1f}s"
         )
-        combined_df = pd.read_csv(
-            workload_dir + f"/out/pmc_1/{fbase}_counter_collection.csv"
-        )
+
         # Reset Dispatch_ID based on PID, Kernel_Name, Grid_Size,
         # Workgroup_Size, LDS_Per_Workgroup, Start_Timestamp, End_Timestamp
+        t_groupby_start = time.time()
         combined_df["Dispatch_ID"] = combined_df.groupby(
             [
                 "PID",
@@ -225,17 +233,24 @@ def run_prof(
             ["Kernel_Name", "Grid_Size", "Workgroup_Size", "LDS_Per_Workgroup"],
             sort=False,
         ).ngroup()
+        console_log(f"[TIMING] groupby.ngroup: {time.time() - t_groupby_start:.1f}s")
+
         # Drop PID since its not required
         combined_df = combined_df.drop(columns=["PID"])
-        combined_df.to_csv(
-            workload_dir + f"/out/pmc_1/{fbase}_counter_collection.csv", index=False
+
+        t_write_start = time.time()
+        marker_df.to_csv(marker_csv_path, index=False)
+        combined_df.to_csv(pmc_csv_path, index=False)
+        shutil.copyfile(pmc_csv_path, workload_dir + f"/results_{fbase}.csv")
+        console_log(
+            f"[TIMING] to_csv (marker + 1x write + copy): "
+            f"{time.time() - t_write_start:.1f}s"
         )
-        combined_df.to_csv(workload_dir + f"/results_{fbase}.csv", index=False)
         if torch_trace_enabled:
             # move counter collection and marker trace to workload dir
             save_torch_trace_inputs(workload_dir, fbase, format_rocprof_output)
         if retain_rocpd_output:
-            for db_path in glob.glob(workload_dir + "/out/pmc_1/*/*.db"):
+            for db_path in db_paths:
                 pid = Path(db_path).stem.split("_")[0]
                 shutil.copyfile(
                     db_path,
