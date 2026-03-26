@@ -84,14 +84,15 @@ typedef struct _HsaKFDContext
 } HsaKFDContext;
 
 // Initialize a pre-allocated HsaKFDContext with the given file descriptor
-void hsakmt_kfdcontext_init_context(int fd, HsaKFDContext *ctx);
+// Returns 0 on success, -1 on allocation failure.
+int hsakmt_kfdcontext_init_context(int fd, HsaKFDContext *ctx);
 // Release all resources associated with the given KFD context
 void hsakmt_kfdcontext_clear_context(HsaKFDContext *ctx);
 
 struct hsa_kfd_topology_context *hsakmt_kfdcontext_get_topology_context(HsaKFDContext *ctx);
 struct hsa_kfd_fmm_context *hsakmt_kfdcontext_get_fmm_context(HsaKFDContext *ctx);
 struct hsa_kfd_queue_context *hsakmt_kfdcontext_get_queue_context(HsaKFDContext *ctx);
-struct hsa_kfd_event_context *hsakmt_kfdcontext_get_event_context(HsaKFDContext *ctx);
+int hsakmt_kfdcontext_init_event_context(HsaKFDContext *ctx);
 struct hsa_kfd_debug_context *hsakmt_kfdcontext_get_debug_context(HsaKFDContext *ctx);
 struct hsa_kfd_perf_context *hsakmt_kfdcontext_get_perf_context(HsaKFDContext *ctx);
 #endif /* _KFDCONTEXT_H_ */
