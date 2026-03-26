@@ -75,36 +75,33 @@ std::vector<char> compile_prog(const char* src) {
   return code;
 }
 
-void* link_prog(const std::vector<char>& global_obj, const std::vector<char>& device_obj) {
-  hipLinkState_t state{};
-  HIP_CHECK(hipLinkCreate(0, nullptr, nullptr, &state));
+void* link_prog(hipLinkState_t* state,const std::vector<char>& global_obj, const std::vector<char>& device_obj) {
+  HIP_CHECK(hipLinkCreate(0, nullptr, nullptr, state));
 
   if (global_obj.size() > 0) {
-  HIP_CHECK(hipLinkAddData(state, hipJitInputSpirv, (void*)global_obj.data(),
+  HIP_CHECK(hipLinkAddData(*state, hipJitInputSpirv, (void*)global_obj.data(),
                            global_obj.size(), "globalfunc.spv", 0, nullptr,
                            nullptr));
   }
 
   if (device_obj.size() > 0) {
-  HIP_CHECK(hipLinkAddData(state, hipJitInputSpirv, (void*)device_obj.data(),
+  HIP_CHECK(hipLinkAddData(*state, hipJitInputSpirv, (void*)device_obj.data(),
                            device_obj.size(), "devicefunc.spv", 0, nullptr,
                            nullptr));
   }
 
   void *bin = nullptr;
   size_t binSize = 0;
-  HIP_CHECK(hipLinkComplete(state, &bin, &binSize));
+  HIP_CHECK(hipLinkComplete(*state, &bin, &binSize));
   REQUIRE(bin != nullptr);
-
-  HIP_CHECK(hipLinkDestroy(state));
 
   return bin;
 }
 
 TEST_CASE("Unit_hiprtc_spirv_compilation") {
-  std::vector<char> code = compile_prog(testfunc);
-
-  void* bin = link_prog(code, {});
+  std::vector<char> code = compile_prog(testfunc); 
+  hipLinkState_t state;
+  void* bin = link_prog(&state, code, {});
 
   hipModule_t module = nullptr;
   hipFunction_t function = nullptr;
@@ -115,13 +112,17 @@ TEST_CASE("Unit_hiprtc_spirv_compilation") {
   HIP_CHECK(hipDeviceSynchronize());
 
   HIP_CHECK(hipModuleUnload(module));
+
+  HIP_CHECK(hipLinkDestroy(state));
 }
 
 TEST_CASE("Unit_hiprtc_spirv_linker") {
   std::vector<char> globalcode = compile_prog(globalfunc);
   std::vector<char> devicecode = compile_prog(devicefunc);
 
-  void* bin = link_prog(globalcode, devicecode);
+  hipLinkState_t state;
+
+  void* bin = link_prog(&state, globalcode, devicecode);
   
   hipModule_t module = nullptr;
   hipFunction_t kernel = nullptr;
@@ -165,4 +166,5 @@ TEST_CASE("Unit_hiprtc_spirv_linker") {
   HIP_CHECK(hipModuleUnload(module));
   HIP_CHECK(hipFree(in_device));
   HIP_CHECK(hipFree(out_device));
+  HIP_CHECK(hipLinkDestroy(state));
 }
