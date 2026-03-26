@@ -118,7 +118,7 @@ jobs:
           echo "ROCm installed to: ${{ env.ROCM_PATH }}"
 
       - name: Clone ROCProfiler SDK & AQLProfile & ROCProfiler Register & ROCR-Runtime
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           sparse-checkout: |
             projects/rocprofiler-sdk
@@ -143,7 +143,7 @@ jobs:
           { echo "paths<<EOF"; cat .git-submodule-paths; echo "EOF"; } >> "$GITHUB_OUTPUT"
 
       - name: Restore submodule cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             .git/modules
@@ -157,7 +157,7 @@ jobs:
         run: git submodule update --init --recursive --jobs 16
 
       - name: Clone ROCDecode
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: 'ROCm/rocDecode'
           ref: 'release/rocm-rel-7.0'
@@ -165,7 +165,7 @@ jobs:
           path: 'rocDecode'
 
       - name: Clone ROCJPEG
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: 'ROCm/rocJPEG'
           ref: 'release/rocm-rel-7.0'
@@ -199,7 +199,7 @@ jobs:
           echo "PATH=$HOME/.local/bin:$PATH" >> $GITHUB_ENV
 
       - name: Setup ccache
-        uses: hendrikmuhs/ccache-action@63069e3931dedbf3b63792097479563182fe70d1 # v1.2.18
+        uses: hendrikmuhs/ccache-action@1bbbcda0748b3e340dee71a314fa68ffcbd6df79 # v1.2.21
         with:
           key: ccache-${{ matrix.system.os }}-${{ matrix.system.runner }}-${{ matrix.system.gpu }}
           max-size: 2G
@@ -425,7 +425,7 @@ jobs:
 
       - name: Archive production artifacts
         if: ${{ github.event_name == 'workflow_dispatch' && contains(matrix.system.gpu, env.CORE_EXT_RUNNER) }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: installers-deb
           path: |
@@ -461,7 +461,7 @@ jobs:
       GPU_RUNNER: ${{ matrix.system.gpu }}
     steps:
       - name: Clone ROCProfiler SDK & AQLProfile & ROCProfiler Register & ROCR-Runtime
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           sparse-checkout: |
             projects/rocprofiler-sdk
@@ -486,7 +486,7 @@ jobs:
           { echo "paths<<EOF"; cat .git-submodule-paths; echo "EOF"; } >> "$GITHUB_OUTPUT"
 
       - name: Restore submodule cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             .git/modules
@@ -538,7 +538,7 @@ jobs:
           ln -s /usr/local/bin/curl /usr/bin/curl
 
       - name: Setup ccache
-        uses: hendrikmuhs/ccache-action@63069e3931dedbf3b63792097479563182fe70d1 # v1.2.18
+        uses: hendrikmuhs/ccache-action@1bbbcda0748b3e340dee71a314fa68ffcbd6df79 # v1.2.21
         with:
           key: ccache-${{ matrix.system.os }}-${{ matrix.system.runner }}-${{ matrix.system.gpu }}
           max-size: 2G
@@ -720,7 +720,7 @@ jobs:
         echo "ROCm installed to: ${{ env.ROCM_PATH }}"
 
     - name: Clone ROCProfiler SDK & AQLProfile & ROCProfiler Register & ROCR-Runtime
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         sparse-checkout: |
           projects/rocprofiler-sdk
@@ -745,7 +745,7 @@ jobs:
         { echo "paths<<EOF"; cat .git-submodule-paths; echo "EOF"; } >> "$GITHUB_OUTPUT"
 
     - name: Restore submodule cache
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           .git/modules
@@ -797,7 +797,7 @@ jobs:
       run: echo 'ROCPROFILER_PC_SAMPLING_BETA_ENABLED=1' >> $GITHUB_ENV
 
     - name: Setup ccache
-      uses: hendrikmuhs/ccache-action@63069e3931dedbf3b63792097479563182fe70d1 # v1.2.18
+      uses: hendrikmuhs/ccache-action@1bbbcda0748b3e340dee71a314fa68ffcbd6df79 # v1.2.21
       with:
         key: ccache-${{ matrix.system.os }}-${{ matrix.system.runner }}-${{ matrix.system.gpu }}-${{ matrix.system.sanitizer}}
         max-size: 2G
