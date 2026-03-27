@@ -98,20 +98,3 @@ RUN set -euo pipefail; \
     fi; \
     aws s3 cp "s3://therock-nightly-tarball/${GPU_TARBALL}" rocm-${GPU_TYPE}.tar.gz --no-sign-request && \
     mv rocm-${GPU_TYPE}.tar.gz /opt/rocm-${GPU_TYPE}.tar.gz;
-
-# Ensure the base ROCm install matches the reported version
-RUN set -euo pipefail; \
-    if [ ! -f /opt/rocm/.info/version ]; then \
-        echo "Missing /opt/rocm/.info/version" >&2; exit 1; \
-    fi; \
-    BASE_VERSION=$(tr -d '[:space:]' < /opt/rocm/.info/version); \
-    if [ -z "${BASE_VERSION}" ] || [ ! -d "/opt/rocm-${BASE_VERSION}" ]; then \
-        echo "ROCm base version ${BASE_VERSION:-<empty>} missing /opt/rocm-${BASE_VERSION}" >&2; \
-        exit 1; \
-    fi; \
-    echo "Verified base ROCm ${BASE_VERSION} at /opt/rocm-${BASE_VERSION}";
-
-# Expose ROCM_VERSION directly from the installed ROCm metadata
-RUN echo "export ROCM_VERSION=$(tr -d '[:space:]' < /opt/rocm/.info/version)" > /etc/profile.d/rocm-version.sh
-
-ENV BASH_ENV=/etc/profile.d/rocm-version.sh
