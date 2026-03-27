@@ -178,6 +178,11 @@ struct manageable_aperture {
 	void *base;
 	void *limit;
 	uint64_t align;
+	/* at current mmap aperture only:
+	 * specifies the alignment size as PAGE_SIZE * 2^alignment_order
+	 * (0 = unused for non-mmap apertures)
+	 */
+	uint32_t alignment_order;
 	uint32_t guard_pages;
 	vm_area_t *vm_ranges;
 	rbtree_t tree;
@@ -240,9 +245,6 @@ typedef struct {
 
 	/* whether all memory is coherent (GPU cache disabled) */
 	bool disable_cache;
-
-	/* specifies the alignment size as PAGE_SIZE * 2^alignment_order */
-	uint32_t alignment_order;
 } svm_t;
 
 struct hsa_kfd_fmm_context
@@ -312,7 +314,6 @@ int hsakmt_kfdcontext_init_fmm_context(HsaKFDContext *ctx)
 	ctx->fmm_context->svm.check_userptr = false;
 	ctx->fmm_context->svm.reserve_svm = false;
 	ctx->fmm_context->svm.disable_cache = false;
-	ctx->fmm_context->svm.alignment_order = 0;
 
 	/* Initialize cpuvm_aperture */
 	ctx->fmm_context->cpuvm_aperture = init_aperture;
@@ -860,8 +861,7 @@ static void *mmap_aperture_allocate_aligned(manageable_aperture_t *aper,
 					    uint64_t size, uint64_t align)
 {
 	uint64_t guard_size;
-	svm_t *svm = container_of(aper, svm_t, apertures);
-	uint64_t alignment_size = PAGE_SIZE << svm->alignment_order;
+	uint64_t alignment_size = PAGE_SIZE << aper->alignment_order;
 
 	if (!aper->is_cpu_accessible) {
 		pr_err("MMap Aperture must be CPU accessible\n");
@@ -1682,7 +1682,6 @@ static void* udmabuf_allocation(HsaKFDContext *ctx,
 	uint64_t guard_size;
 	void *mem;
 	int ret;
-	struct hsa_kfd_fmm_context *fmm_ctx = ctx->fmm_context;
 
 	dmabuf_fd = -1;
 	memfd = -1;
@@ -1707,7 +1706,7 @@ static void* udmabuf_allocation(HsaKFDContext *ctx,
 		goto error_release_memfd;
 	}
 
-	alignment_size = PAGE_SIZE << fmm_ctx->svm.alignment_order;
+	alignment_size = PAGE_SIZE << aperture->alignment_order;
 	alignment = alignment ? alignment : aperture->align;
 	while (alignment < alignment_size && size >= (alignment << 1))
 		alignment <<= 1;
@@ -2879,18 +2878,20 @@ HSAKMT_STATUS hsakmt_fmm_init_process_apertures(HsaKFDContext *ctx,
 	 * size is set to 18(1G) for GFX950 to reduce TLB hits. If any non-gfx950
 	 * ASIC is found in the system, set back to 9(2MB).
 	 */
+	uint32_t svm_alignment_order;
+
 	maxVaAlignStr = getenv("HSA_MAX_VA_ALIGN");
-	if (!maxVaAlignStr || sscanf(maxVaAlignStr, "%u", &fmm_ctx->svm.alignment_order) != 1) {
-		fmm_ctx->svm.alignment_order = 18;
+	if (!maxVaAlignStr || sscanf(maxVaAlignStr, "%u", &svm_alignment_order) != 1) {
+		svm_alignment_order = 18;
 
 		for (i = 0; i < NumNodes; i++) {
 			if (hsakmt_get_gfxv_by_node_id(ctx, i) != GFX_VERSION_GFX950) {
-				fmm_ctx->svm.alignment_order = 9;
+				svm_alignment_order = 9;
 				break;
 			}
 		}
 	}
-	pr_info("SVM alignment default order is %d.", fmm_ctx->svm.alignment_order);
+	pr_info("SVM alignment default order is %d.", svm_alignment_order);
 
 	/* Trade off - NumNodes includes GPU nodes + CPU Node. So in
 	 * systems with CPU node, slightly more memory is allocated than
@@ -3107,6 +3108,8 @@ HSAKMT_STATUS hsakmt_fmm_init_process_apertures(HsaKFDContext *ctx,
 					 guardPages);
 		if (ret != HSAKMT_STATUS_SUCCESS)
 			goto init_svm_failed;
+
+		fmm_ctx->svm.apertures[SVM_DEFAULT].alignment_order = svm_alignment_order;
 
 		for (i = 0 ; i < num_of_sysfs_nodes ; i++) {
 			uintptr_t alt_base;
