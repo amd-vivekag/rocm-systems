@@ -71,6 +71,8 @@ protected:
   uint64_t m_address;
 
 public:
+  using underlying_type_t = decltype (m_address);
+
   constexpr base_address_t () = default;
   constexpr base_address_t (uint64_t address) : m_address (address) {}
   constexpr operator uint64_t () const { return m_address; }
@@ -116,8 +118,8 @@ class global_address_t : public detail::base_address_t<global_address_t>
 public:
   constexpr global_address_t () : base_address_t (){};
   constexpr global_address_t (uint64_t address) : base_address_t (address) {}
-  operator agent_address_t () { return agent_address_t{ m_address }; }
-  operator host_address_t () { return host_address_t{ m_address }; }
+  operator agent_address_t () const { return agent_address_t{ m_address }; }
+  operator host_address_t () const { return host_address_t{ m_address }; }
 };
 
 template <> std::string to_string (agent_address_t address);
