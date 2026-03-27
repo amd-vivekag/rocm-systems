@@ -143,6 +143,13 @@ void TestCrossProcessSerialization::SetUp(void) {
       setup_failed_ = true;
     }
     close(waiter_ready_pipe_[0]);
+    if (setup_failed_) {
+      // Close run_pipe_[1] before ASSERT_EQ longjmps out so the child's
+      // read(run_pipe_[0]) unblocks and the child can exit cleanly rather
+      // than hanging. Run() would normally own this close, but setup_failed_
+      // causes Run() to return early before reaching it.
+      close(run_pipe_[1]);
+    }
     ASSERT_EQ(ret, AMDSMI_STATUS_SUCCESS);
   } else {
     // Waiter: does not write to init_pipe, does not read waiter_ready_pipe

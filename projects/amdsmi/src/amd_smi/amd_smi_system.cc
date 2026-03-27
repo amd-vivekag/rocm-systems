@@ -270,8 +270,9 @@ amdsmi_status_t AMDSmiSystem::init(uint64_t flags) {
   amdsmi_status_t amd_smi_status;
 
   // populate GPU sockets and processors
-  // Also initialize GPU devices when the test flag is set (for mutual exclusion testing)
-  if ((flags & AMDSMI_INIT_AMD_GPUS) || (flags & AMD_SMI_INIT_FLAG_RESRV_TEST1)) {
+  // AMD_SMI_INIT_FLAG_RESRV_TEST1 requires AMDSMI_INIT_AMD_GPUS to also be
+  // set by the caller; it does not implicitly enable GPU device population.
+  if (flags & AMDSMI_INIT_AMD_GPUS) {
     amd_smi_status = populate_amd_gpu_devices();
     if (amd_smi_status != AMDSMI_STATUS_SUCCESS) return amd_smi_status;
   }

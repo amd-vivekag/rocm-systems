@@ -98,15 +98,19 @@ void TestFrequenciesRead::Run(void) {
   for (uint32_t x = 0; x < num_iterations(); ++x) {
     for (uint32_t i = 0; i < num_monitor_devs(); ++i) {
       auto freq_output = [&](amdsmi_clk_type_t t, const char* name) {
-        DISPLAY_AMDSMI_API("amdsmi_get_clk_freq", "gpu=" + std::to_string(i), VERB(STANDARD));
+        // Verify invalid arguments are properly handled
+        DISPLAY_AMDSMI_API("amdsmi_get_clk_freq(nullptr)", "gpu=" + std::to_string(i),
+                           VERB(STANDARD));
+        err = amdsmi_get_clk_freq(processor_handles_[i], t, nullptr);
+        DISPLAY_AMDSMI_STATUS(VERB(STANDARD), __FILE__, __LINE__, err, AMDSMI_STATUS_INVAL);
+        ASSERT_EQ(err, AMDSMI_STATUS_INVAL);
+
+        DISPLAY_AMDSMI_API("amdsmi_get_clk_freq(" + std::string(name) + ")",
+                           "gpu=" + std::to_string(i), VERB(STANDARD));
         err = amdsmi_get_clk_freq(processor_handles_[i], t, &f);
         DISPLAY_AMDSMI_STATUS(VERB(STANDARD), __FILE__, __LINE__, err, AMDSMI_STATUS_SUCCESS);
         if (err == AMDSMI_STATUS_NOT_SUPPORTED) {
           std::cout << "\t**Get " << name << ": Not supported on this machine" << std::endl;
-          // Verify api support checking functionality is working
-          DISPLAY_AMDSMI_API("amdsmi_get_clk_freq", "gpu=" + std::to_string(i), VERB(STANDARD));
-          err = amdsmi_get_clk_freq(processor_handles_[i], t, nullptr);
-          DISPLAY_AMDSMI_STATUS(VERB(STANDARD), __FILE__, __LINE__, err, AMDSMI_STATUS_INVAL);
           ASSERT_EQ(err, AMDSMI_STATUS_NOT_SUPPORTED);
           return;
         }
@@ -128,18 +132,13 @@ void TestFrequenciesRead::Run(void) {
           std::cout << "\t**Supported " << name << " clock frequencies: ";
           std::cout << f.num_supported << std::endl;
           print_frequencies(&f);
-          // Verify api support checking functionality is working
-          DISPLAY_AMDSMI_API("amdsmi_get_clk_freq", "gpu=" + std::to_string(i), VERB(STANDARD));
-          err = amdsmi_get_clk_freq(processor_handles_[i], t, nullptr);
-          DISPLAY_AMDSMI_STATUS(VERB(STANDARD), __FILE__, __LINE__, err, AMDSMI_STATUS_INVAL);
-          ASSERT_EQ(err, AMDSMI_STATUS_INVAL);
         }
       };
 
       PrintDeviceHeader(processor_handles_[i]);
 
-      freq_output(AMDSMI_CLK_TYPE_MEM, "Supported GPU Memory");
-      freq_output(AMDSMI_CLK_TYPE_SYS, "Supported GPU");
+      freq_output(AMDSMI_CLK_TYPE_MEM, "GPU Memory Clock (mclk)");
+      freq_output(AMDSMI_CLK_TYPE_SYS, "GPU Clock (sclk)");
       freq_output(AMDSMI_CLK_TYPE_DF, "Data Fabric Clock");
       freq_output(AMDSMI_CLK_TYPE_DCEF, "Display Controller Engine Clock");
       freq_output(AMDSMI_CLK_TYPE_SOC, "SOC Clock");

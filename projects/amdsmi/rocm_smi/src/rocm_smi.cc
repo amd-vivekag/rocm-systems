@@ -609,6 +609,9 @@ rsmi_status_t rsmi_dev_ecc_enabled_get(uint32_t dv_ind, uint64_t* enabled_blks) 
   ss << __PRETTY_FUNCTION__ << " | ======= start =======";
   LOG_TRACE(ss);
 
+  if (enabled_blks == nullptr) {
+    return RSMI_STATUS_INVALID_ARGS;
+  }
   CHK_SUPPORT_NAME_ONLY(enabled_blks)
 
   DEVICE_MUTEX
@@ -662,6 +665,9 @@ rsmi_status_t rsmi_dev_ecc_status_get(uint32_t dv_ind, rsmi_gpu_block_t block,
   ss << __PRETTY_FUNCTION__ << "| ======= start =======";
   LOG_TRACE(ss);
 
+  if (state == nullptr) {
+    return RSMI_STATUS_INVALID_ARGS;
+  }
   CHK_SUPPORT_NAME_ONLY(state)
 
   if (!is_power_of_2(block)) {
@@ -710,6 +716,9 @@ rsmi_status_t rsmi_dev_ecc_count_get(uint32_t dv_ind, rsmi_gpu_block_t block,
 
   TRY ss << __PRETTY_FUNCTION__ << "| ======= start =======";
   LOG_TRACE(ss);
+  if (ec == nullptr) {
+    return RSMI_STATUS_INVALID_ARGS;
+  }
 
   amd::smi::DevInfoTypes type;
   switch (block) {
@@ -769,10 +778,6 @@ rsmi_status_t rsmi_dev_ecc_count_get(uint32_t dv_ind, rsmi_gpu_block_t block,
     return ret;
   }
 
-  if (ec == nullptr) {
-    return RSMI_STATUS_INVALID_ARGS;
-  }
-
   std::string junk;
   std::istringstream fs1(val_vec[0]);
 
@@ -811,6 +816,9 @@ rsmi_status_t rsmi_dev_pci_id_get(uint32_t dv_ind, uint64_t* bdfid) {
   ss << __PRETTY_FUNCTION__ << "| ======= start =======";
   LOG_TRACE(ss);
 
+  if (bdfid == nullptr) {
+    return RSMI_STATUS_INVALID_ARGS;
+  }
   GET_DEV_AND_KFDNODE_FROM_INDX
   CHK_API_SUPPORT_ONLY(bdfid, RSMI_DEFAULT_VARIANT, RSMI_DEFAULT_VARIANT)
   DEVICE_MUTEX
@@ -939,6 +947,9 @@ rsmi_status_t rsmi_ras_feature_info_get(uint32_t dv_ind, rsmi_ras_feature_info_t
   ss << __PRETTY_FUNCTION__ << " | ======= start =======";
   LOG_TRACE(ss);
 
+  if (ras_feature == nullptr) {
+    return RSMI_STATUS_INVALID_ARGS;
+  }
   CHK_SUPPORT_NAME_ONLY(ras_feature)
 
   DEVICE_MUTEX
@@ -1122,6 +1133,9 @@ rsmi_status_t rsmi_dev_subsystem_id_get(uint32_t dv_ind, uint16_t* id) {
   std::ostringstream ss;
   ss << __PRETTY_FUNCTION__ << "| ======= start =======";
   LOG_TRACE(ss);
+  if (id == nullptr) {
+    return RSMI_STATUS_INVALID_ARGS;
+  }
   CHK_SUPPORT_NAME_ONLY(id)
   auto ret = get_id(dv_ind, amd::smi::kDevSubSysDevID, id);
   ss << __PRETTY_FUNCTION__ << " | ======= end ======="
@@ -1299,6 +1313,9 @@ rsmi_status_t rsmi_dev_mem_overdrive_level_get(uint32_t dv_ind, uint32_t* od) {
   std::ostringstream ss;
   ss << __PRETTY_FUNCTION__ << "| ======= start =======";
   LOG_TRACE(ss);
+  if (od == nullptr) {
+    return RSMI_STATUS_INVALID_ARGS;
+  }
   CHK_SUPPORT_NAME_ONLY(od)
   DEVICE_MUTEX
 
@@ -2883,7 +2900,7 @@ rsmi_status_t rsmi_dev_subsystem_name_get(uint32_t dv_ind, char* name, size_t le
   LOG_TRACE(ss);
   CHK_SUPPORT_NAME_ONLY(name)
 
-  if (len == 0) {
+  if (name == nullptr || len == 0) {
     return RSMI_STATUS_INVALID_ARGS;
   }
 
@@ -2970,6 +2987,7 @@ rsmi_status_t rsmi_dev_pci_bandwidth_get(uint32_t dv_ind, rsmi_pcie_bandwidth_t*
   if (b == nullptr) {
     return RSMI_STATUS_INVALID_ARGS;
   }
+  CHK_API_SUPPORT_ONLY((b), RSMI_DEFAULT_VARIANT, RSMI_DEFAULT_VARIANT)
 
   ret = get_frequencies(amd::smi::kDevPCIEClk, RSMI_CLK_TYPE_PCIE, dv_ind, &b->transfer_rate,
                         b->lanes);
@@ -3492,6 +3510,10 @@ rsmi_status_t rsmi_dev_fan_speed_get(uint32_t dv_ind, uint32_t sensor_ind, int64
 
   ++sensor_ind;  // fan sysfs files have 1-based indices
 
+  if (speed == nullptr) {
+    return RSMI_STATUS_INVALID_ARGS;
+  }
+
   CHK_SUPPORT_SUBVAR_ONLY(speed, sensor_ind)
 
   DEVICE_MUTEX
@@ -3508,6 +3530,10 @@ rsmi_status_t rsmi_dev_fan_rpms_get(uint32_t dv_ind, uint32_t sensor_ind, int64_
   LOG_TRACE(ss);
 
   ++sensor_ind;  // fan sysfs files have 1-based indices
+
+  if (speed == nullptr) {
+    return RSMI_STATUS_INVALID_ARGS;
+  }
 
   CHK_SUPPORT_SUBVAR_ONLY(speed, sensor_ind)
 
@@ -3579,6 +3605,9 @@ rsmi_status_t rsmi_dev_fan_speed_max_get(uint32_t dv_ind, uint32_t sensor_ind,
   ss << __PRETTY_FUNCTION__ << "| ======= start =======";
   LOG_TRACE(ss);
   ++sensor_ind;  // fan sysfs files have 1-based indices
+  if (max_speed == nullptr) {
+    return RSMI_STATUS_INVALID_ARGS;
+  }
   CHK_SUPPORT_SUBVAR_ONLY(max_speed, sensor_ind)
   DEVICE_MUTEX
 
@@ -3593,6 +3622,9 @@ rsmi_status_t rsmi_dev_od_volt_info_get(uint32_t dv_ind, rsmi_od_volt_freq_data_
   TRY std::ostringstream ss;
   ss << __PRETTY_FUNCTION__ << "| ======= start =======";
   LOG_TRACE(ss);
+  if (odv == nullptr) {
+    return RSMI_STATUS_INVALID_ARGS;
+  }
   DEVICE_MUTEX
   CHK_SUPPORT_NAME_ONLY(odv)
   rsmi_status_t ret = get_od_clk_volt_info(dv_ind, odv);
@@ -3667,10 +3699,11 @@ rsmi_status_t rsmi_dev_od_volt_curve_regions_get(uint32_t dv_ind, uint32_t* num_
   ss << __PRETTY_FUNCTION__ << " | ======= start =======";
   LOG_TRACE(ss);
 
-  CHK_SUPPORT_NAME_ONLY((num_regions == nullptr || buffer == nullptr) ? nullptr : num_regions)
-  if (*num_regions == 0) {
+  if (num_regions == nullptr || buffer == nullptr) {
     return RSMI_STATUS_INVALID_ARGS;
   }
+
+  CHK_SUPPORT_NAME_ONLY((num_regions == nullptr || buffer == nullptr) ? nullptr : num_regions)
 
   DEVICE_MUTEX
   rsmi_status_t ret = get_od_clk_volt_curve_regions(dv_ind, num_regions, buffer);
@@ -4028,6 +4061,10 @@ rsmi_status_t rsmi_dev_memory_total_get(uint32_t dv_ind, rsmi_memory_type_t mem_
   ss << __PRETTY_FUNCTION__ << "| ======= start =======";
   LOG_TRACE(ss);
 
+  if (total == nullptr) {
+    return RSMI_STATUS_INVALID_ARGS;
+  }
+
   CHK_SUPPORT_VAR(total, mem_type)
 
   switch (mem_type) {
@@ -4098,6 +4135,10 @@ rsmi_status_t rsmi_dev_memory_usage_get(uint32_t dv_ind, rsmi_memory_type_t mem_
   std::ostringstream ss;
   ss << __PRETTY_FUNCTION__ << "| ======= start =======";
   LOG_TRACE(ss);
+
+  if (used == nullptr) {
+    return RSMI_STATUS_INVALID_ARGS;
+  }
 
   CHK_SUPPORT_VAR(used, mem_type)
 
@@ -5056,6 +5097,12 @@ rsmi_status_t rsmi_dev_memory_reserved_pages_get(uint32_t dv_ind, uint32_t* num_
   LOG_TRACE(ss);
 
   rsmi_status_t ret;
+  // records can be nullptr, but num_pages cannot be nullptr.
+  // If records is nullptr, num_pages will be used to return the
+  // number of records available.
+  if (num_pages == nullptr) {
+    return RSMI_STATUS_INVALID_ARGS;
+  }
   CHK_SUPPORT_NAME_ONLY(num_pages)
 
   std::vector<std::string> val_vec;

@@ -3846,7 +3846,6 @@ amdsmi_status_t amdsmi_get_gpu_compute_process_gpus(uint32_t pid, uint32_t* dv_i
 amdsmi_status_t amdsmi_get_gpu_ecc_count(amdsmi_processor_handle processor_handle,
                                          amdsmi_gpu_block_t block, amdsmi_error_count_t* ec) {
   AMDSMI_CHECK_INIT();
-  // nullptr api supported
 
   return rsmi_wrapper(rsmi_dev_ecc_count_get, processor_handle, 0,
                       static_cast<rsmi_gpu_block_t>(block),
@@ -3855,15 +3854,11 @@ amdsmi_status_t amdsmi_get_gpu_ecc_count(amdsmi_processor_handle processor_handl
 amdsmi_status_t amdsmi_get_gpu_ecc_enabled(amdsmi_processor_handle processor_handle,
                                            uint64_t* enabled_blocks) {
   AMDSMI_CHECK_INIT();
-  // nullptr api supported
-
   return rsmi_wrapper(rsmi_dev_ecc_enabled_get, processor_handle, 0, enabled_blocks);
 }
 amdsmi_status_t amdsmi_get_gpu_ecc_status(amdsmi_processor_handle processor_handle,
                                           amdsmi_gpu_block_t block, amdsmi_ras_err_state_t* state) {
   AMDSMI_CHECK_INIT();
-  // nullptr api supported
-
   return rsmi_wrapper(rsmi_dev_ecc_status_get, processor_handle, 0,
                       static_cast<rsmi_gpu_block_t>(block),
                       reinterpret_cast<rsmi_ras_err_state_t*>(state));
@@ -3987,8 +3982,10 @@ amdsmi_status_t amdsmi_get_gpu_power_profile_presets(amdsmi_processor_handle pro
                                                      uint32_t sensor_ind,
                                                      amdsmi_power_profile_status_t* status) {
   AMDSMI_CHECK_INIT();
-  // nullptr api supported
 
+  if (status == nullptr) {
+    return AMDSMI_STATUS_INVAL;
+  }
   // Bare Metal and passthrough only feature
   amdsmi_virtualization_mode_t virt_mode;
   if (amdsmi_get_gpu_virtualization_mode(processor_handle, &virt_mode) == AMDSMI_STATUS_SUCCESS) {
@@ -4061,7 +4058,9 @@ amdsmi_status_t amdsmi_get_gpu_pci_bandwidth(amdsmi_processor_handle processor_h
 amdsmi_status_t amdsmi_get_clk_freq(amdsmi_processor_handle processor_handle,
                                     amdsmi_clk_type_t clk_type, amdsmi_frequencies_t* f) {
   AMDSMI_CHECK_INIT();
-  // nullptr api supported
+  if (!f) {
+    return AMDSMI_STATUS_INVAL;
+  }
 
   // Read VCLK/DCLK from sysfs pp_dpm files instead of gpu_metrics
   if (clk_type == AMDSMI_CLK_TYPE_VCLK0 || clk_type == AMDSMI_CLK_TYPE_VCLK1 ||
@@ -4321,6 +4320,9 @@ amdsmi_status_t amdsmi_get_gpu_memory_usage(amdsmi_processor_handle processor_ha
 
 amdsmi_status_t amdsmi_get_gpu_overdrive_level(amdsmi_processor_handle processor_handle,
                                                uint32_t* od) {
+  if (od == nullptr) {
+    return AMDSMI_STATUS_INVAL;
+  }
   // Bare Metal and passthrough only feature
   amdsmi_virtualization_mode_t virt_mode;
   if (amdsmi_get_gpu_virtualization_mode(processor_handle, &virt_mode) == AMDSMI_STATUS_SUCCESS) {

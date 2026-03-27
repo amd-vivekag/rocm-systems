@@ -93,27 +93,22 @@ void TestPowerReadWrite::Run(void) {
   for (uint32_t dv_ind = 0; dv_ind < num_monitor_devs(); ++dv_ind) {
     PrintDeviceHeader(processor_handles_[dv_ind]);
 
+    // Verify invalid arguments are properly handled
+    DISPLAY_AMDSMI_API("amdsmi_get_gpu_power_profile_presets(nullptr)",
+                       "gpu=" + std::to_string(dv_ind), VERB(STANDARD));
+    ret = amdsmi_get_gpu_power_profile_presets(processor_handles_[dv_ind], 0, nullptr);
+    DISPLAY_AMDSMI_STATUS(VERB(STANDARD), __FILE__, __LINE__, ret, AMDSMI_STATUS_INVAL);
+    ASSERT_EQ(ret, AMDSMI_STATUS_INVAL);
+
     DISPLAY_AMDSMI_API("amdsmi_get_gpu_power_profile_presets", "gpu=" + std::to_string(dv_ind),
                        VERB(STANDARD));
     ret = amdsmi_get_gpu_power_profile_presets(processor_handles_[dv_ind], 0, &status);
     DISPLAY_AMDSMI_STATUS(VERB(STANDARD), __FILE__, __LINE__, ret, AMDSMI_STATUS_SUCCESS);
     if (ret == AMDSMI_STATUS_NOT_SUPPORTED) {
-      // Verify api support checking functionality is working
-      DISPLAY_AMDSMI_API("amdsmi_get_gpu_power_profile_presets", "gpu=" + std::to_string(dv_ind),
-                         VERB(STANDARD));
-      ret = amdsmi_get_gpu_power_profile_presets(processor_handles_[dv_ind], 0, nullptr);
-      DISPLAY_AMDSMI_STATUS(VERB(STANDARD), __FILE__, __LINE__, ret, AMDSMI_STATUS_INVAL);
       ASSERT_EQ(ret, AMDSMI_STATUS_NOT_SUPPORTED);
       continue;
     }
     CHK_ERR_ASRT(ret)
-
-    // Verify api support checking functionality is working
-    DISPLAY_AMDSMI_API("amdsmi_get_gpu_power_profile_presets", "gpu=" + std::to_string(dv_ind),
-                       VERB(STANDARD));
-    ret = amdsmi_get_gpu_power_profile_presets(processor_handles_[dv_ind], 0, nullptr);
-    DISPLAY_AMDSMI_STATUS(VERB(STANDARD), __FILE__, __LINE__, ret, AMDSMI_STATUS_INVAL);
-    ASSERT_EQ(ret, AMDSMI_STATUS_INVAL);
 
     IF_VERB(STANDARD) {
       std::cout << "The available power profiles are:" << std::endl;

@@ -138,7 +138,7 @@ void TestPowerCapReadWrite::Run(void) {
     uint32_t sensor_count = 0;
     uint32_t sensor_inds[2];
     amdsmi_power_cap_type_t sensor_types[2];
-    DISPLAY_AMDSMI_API("amdsmi_get_supported_power_cap", "gpu=" + std::to_string(dv_ind),
+    DISPLAY_AMDSMI_API("amdsmi_get_supported_power_cap(nullptr)", "gpu=" + std::to_string(dv_ind),
                        VERB(STANDARD));
     ret = amdsmi_get_supported_power_cap(processor_handles_[dv_ind], &sensor_count, sensor_inds,
                                          nullptr);

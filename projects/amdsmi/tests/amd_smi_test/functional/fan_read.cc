@@ -72,25 +72,37 @@ void TestFanRead::Run(void) {
     for (uint32_t i = 0; i < num_monitor_devs(); ++i) {
       PrintDeviceHeader(processor_handles_[i]);
 
+      // Verify invalid arguments are properly handled
+      DISPLAY_AMDSMI_API("amdsmi_get_gpu_fan_speed(nullptr)", "gpu=" + std::to_string(i),
+                         VERB(STANDARD));
+      err = amdsmi_get_gpu_fan_speed(processor_handles_[i], 0, nullptr);
+      DISPLAY_AMDSMI_STATUS(VERB(STANDARD), __FILE__, __LINE__, err, AMDSMI_STATUS_INVAL);
+      ASSERT_EQ(err, AMDSMI_STATUS_INVAL);
+
+      // Verify invalid arguments are properly handled
+      DISPLAY_AMDSMI_API("amdsmi_get_gpu_fan_speed_max(nullptr)", "gpu=" + std::to_string(i),
+                         VERB(STANDARD));
+      err = amdsmi_get_gpu_fan_speed_max(processor_handles_[i], 0, nullptr);
+      DISPLAY_AMDSMI_STATUS(VERB(STANDARD), __FILE__, __LINE__, err, AMDSMI_STATUS_INVAL);
+      ASSERT_EQ(err, AMDSMI_STATUS_INVAL);
+
+      // Verify invalid arguments are properly handled
+      DISPLAY_AMDSMI_API("amdsmi_get_gpu_fan_rpms(nullptr)", "gpu=" + std::to_string(i),
+                         VERB(STANDARD));
+      err = amdsmi_get_gpu_fan_rpms(processor_handles_[i], 0, nullptr);
+      DISPLAY_AMDSMI_STATUS(VERB(STANDARD), __FILE__, __LINE__, err, AMDSMI_STATUS_INVAL);
+      ASSERT_EQ(err, AMDSMI_STATUS_INVAL);
+
+      // Verify api support checking functionality is working
       DISPLAY_AMDSMI_API("amdsmi_get_gpu_fan_speed", "gpu=" + std::to_string(i), VERB(STANDARD));
       err = amdsmi_get_gpu_fan_speed(processor_handles_[i], 0, &val_i64);
       DISPLAY_AMDSMI_STATUS(VERB(STANDARD), __FILE__, __LINE__, err, AMDSMI_STATUS_SUCCESS);
       if (err == AMDSMI_STATUS_NOT_SUPPORTED) {
-        // Verify api support checking functionality is working
-        DISPLAY_AMDSMI_API("amdsmi_get_gpu_fan_speed", "gpu=" + std::to_string(i), VERB(STANDARD));
-        err = amdsmi_get_gpu_fan_speed(processor_handles_[i], 0, nullptr);
-        DISPLAY_AMDSMI_STATUS(VERB(STANDARD), __FILE__, __LINE__, err, AMDSMI_STATUS_INVAL);
         ASSERT_EQ(err, AMDSMI_STATUS_NOT_SUPPORTED);
-        return;
+        continue;
       } else {
         CHK_ERR_ASRT(err)
       }
-
-      // Verify api support checking functionality is working
-      DISPLAY_AMDSMI_API("amdsmi_get_gpu_fan_speed", "gpu=" + std::to_string(i), VERB(STANDARD));
-      err = amdsmi_get_gpu_fan_speed(processor_handles_[i], 0, nullptr);
-      DISPLAY_AMDSMI_STATUS(VERB(STANDARD), __FILE__, __LINE__, err, AMDSMI_STATUS_INVAL);
-      ASSERT_EQ(err, AMDSMI_STATUS_INVAL);
 
       DISPLAY_AMDSMI_API("amdsmi_get_gpu_fan_speed_max", "gpu=" + std::to_string(i),
                          VERB(STANDARD));
@@ -102,12 +114,6 @@ void TestFanRead::Run(void) {
         std::cout << static_cast<float>(val_i64) / static_cast<float>(val_ui64) * 100;
         std::cout << "% (" << val_i64 << "/" << val_ui64 << ")" << std::endl;
       }
-      // Verify api support checking functionality is working
-      DISPLAY_AMDSMI_API("amdsmi_get_gpu_fan_speed_max", "gpu=" + std::to_string(i),
-                         VERB(STANDARD));
-      err = amdsmi_get_gpu_fan_speed_max(processor_handles_[i], 0, nullptr);
-      DISPLAY_AMDSMI_STATUS(VERB(STANDARD), __FILE__, __LINE__, err, AMDSMI_STATUS_INVAL);
-      ASSERT_EQ(err, AMDSMI_STATUS_INVAL);
 
       DISPLAY_AMDSMI_API("amdsmi_get_gpu_fan_rpms", "gpu=" + std::to_string(i), VERB(STANDARD));
       err = amdsmi_get_gpu_fan_rpms(processor_handles_[i], 0, &val_i64);
@@ -117,12 +123,6 @@ void TestFanRead::Run(void) {
         std::cout << "\t**Current fan RPMs: ";
         std::cout << val_i64 << std::endl;
       }
-
-      // Verify api support checking functionality is working
-      DISPLAY_AMDSMI_API("amdsmi_get_gpu_fan_rpms", "gpu=" + std::to_string(i), VERB(STANDARD));
-      err = amdsmi_get_gpu_fan_rpms(processor_handles_[i], 0, nullptr);
-      DISPLAY_AMDSMI_STATUS(VERB(STANDARD), __FILE__, __LINE__, err, AMDSMI_STATUS_INVAL);
-      ASSERT_EQ(err, AMDSMI_STATUS_INVAL);
     }
   }
 }
