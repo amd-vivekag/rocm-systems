@@ -402,6 +402,15 @@ else()
     set(ROCPROFSYS_USE_SANITIZER OFF)
 endif()
 
+# sanitizer instrumentation inflates stack frames and triggers false positives
+# in GCC's -Wmaybe-uninitialized and -Wstack-usage diagnostics
+if(ROCPROFSYS_USE_SANITIZER AND ROCPROFSYS_BUILD_DEVELOPER)
+    add_target_flag_if_avail(rocprofiler-systems-compile-options
+                             "-Wno-error=maybe-uninitialized"
+                             "-Wno-error=stack-usage="
+    )
+endif()
+
 # ----------------------------------------------------------------------------------------#
 # static lib flags
 #

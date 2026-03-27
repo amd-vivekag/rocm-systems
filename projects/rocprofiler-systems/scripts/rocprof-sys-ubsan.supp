@@ -1,0 +1,40 @@
+# UndefinedBehaviorSanitizer ignorelist for rocprofiler-systems
+# See: https://clang.llvm.org/docs/SanitizerSpecialCaseList.html
+#
+# Format: <type>:<pattern>=<category>
+# This file is passed via -fsanitize-blacklist= at compile time
+# or via UBSAN_OPTIONS=suppressions= at runtime (GCC).
+
+# Dyninst - third-party binary instrumentation framework
+[undefined]
+src:*/external/dyninst/*
+
+# Boost - third-party library
+[undefined]
+src:*/external/boost/*
+src:*/boost/*
+
+# TBB - Intel Threading Building Blocks
+[undefined]
+src:*/external/tbb/*
+src:*/tbb/*
+
+# timemory - performance analysis toolkit
+[undefined]
+src:*/external/timemory/*
+
+# perfetto - tracing framework
+[undefined]
+src:*/external/perfetto/*
+
+# elfio - ELF reader/writer
+[undefined]
+src:*/external/elfio/*
+
+# pybind11 - Python bindings
+[undefined]
+src:*/external/pybind11/*
+
+# PTL - parallel tasking library
+[undefined]
+src:*/external/PTL/*

@@ -1,0 +1,38 @@
+# LeakSanitizer suppression file for rocprofiler-systems
+# See: https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer#suppression
+#
+# Format: leak:<pattern>
+# LSan runs as part of ASan when detect_leaks=1
+
+# Dyninst - third-party binary instrumentation framework
+leak:Dyninst::
+leak:dyninst
+
+# TBB - Intel Threading Building Blocks
+leak:tbb::
+
+# Boost - third-party library
+leak:boost::
+
+# DWARF debugging library
+leak:libdw
+
+# ROCm libraries
+leak:libamd_comgr
+leak:libpfm4
+leak:libhsa
+leak:libamdhip64
+leak:libroctracer64
+leak:librocprofiler64
+
+# timemory internals
+leak:__cxx_global_var_init
+leak:tim::timemory_argparse
+leak:tim::argparse::argument_parser::parse_known_args
+leak:std::shared_ptr<std::promise<void> >
+
+# Known allocator patterns
+leak:realloc
+
+# Kokkos runtime
+leak:Kokkos::
