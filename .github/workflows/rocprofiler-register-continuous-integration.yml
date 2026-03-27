@@ -72,6 +72,8 @@ jobs:
     env:
       BUILD_TYPE: RelWithDebInfo
       INSTALL_PREFIX: /opt/rocprofiler-register
+      ROCM_PATH: /opt/rocm
+      ROCM_NIGHTLY_PATH: /opt/rocm-nightly
       PACKAGING_INSTALL_PREFIX: /opt/rocm
       GIT_DISCOVERY_ACROSS_FILESYSTEM: 1
       PATH: /usr/bin:$PATH
@@ -81,8 +83,14 @@ jobs:
       shell: bash
       working-directory: /tmp
       run: |
-        tar -xf ${{ env.PACKAGING_INSTALL_PREFIX }}-gfx94X.tar.gz -C ${{ env.PACKAGING_INSTALL_PREFIX }}
-        echo "ROCm installed to: ${{ env.PACKAGING_INSTALL_PREFIX }}"
+        rocm_install_path="${{ env.ROCM_NIGHTLY_PATH }}"
+        rocm_tarball="${{ env.ROCM_PATH }}-gfx94X.tar.gz"
+        rm -rf "${rocm_install_path}"
+        mkdir -p "${rocm_install_path}"
+        tar -xf "${rocm_tarball}" -C "${rocm_install_path}"
+        rm -rf "${{ env.ROCM_PATH }}"
+        ln -s "${rocm_install_path}" "${{ env.ROCM_PATH }}"
+        echo "ROCm installed to: ${rocm_install_path}"
 
     - name: Setup Git
       shell: bash

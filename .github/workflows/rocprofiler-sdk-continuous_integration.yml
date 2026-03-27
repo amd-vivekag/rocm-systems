@@ -530,6 +530,7 @@ jobs:
         shell: bash
         run: |
           echo "PKG_CONFIG_PATH=/opt/amdgpu/lib64/pkgconfig:/opt/amdgpu/lib/pkgconfig:/opt/amdgpu/lib/$(uname -p)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=${{ env.ROCM_PATH }}/lib64:${{ env.ROCM_PATH }}/lib:${{ env.ROCM_PATH }}/llvm/lib:${LD_LIBRARY_PATH}" >> $GITHUB_ENV
 
       - name: Install Curl for RHEL 8.8
         if: ${{ matrix.system.os == 'rhel-8.8' }}
@@ -588,7 +589,6 @@ jobs:
         run: |
           export HIP_DIR=$PWD/hip
           export CLR_DIR=$PWD/clr
-          export LD_LIBRARY_PATH=${{ env.ROCM_PATH }}/lib:${{ env.ROCM_PATH }}/llvm/lib:$LD_LIBRARY_PATH
           export PATH=${{ env.ROCM_PATH }}/bin:${{ env.ROCM_PATH }}/llvm/bin:$PATH
           echo "Install HIP..."
           cd $CLR_DIR
