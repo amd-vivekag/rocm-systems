@@ -222,6 +222,13 @@
     abort();                                                                                       \
   }
 
+// Causes the test to stop and be skipped at runtime.
+#define HIP_SKIP_TEST(reason)                                                                      \
+  {                                                                                                \
+    std::cout << "HIP_SKIP_THIS_TEST" << std::endl;                                                \
+    SKIP(reason);                                                                                  \
+  }
+
 #if HT_NVIDIA
 #define CTX_CREATE()                                                                               \
   hipCtx_t context;                                                                                \
@@ -460,15 +467,6 @@ inline bool areWarpMatchFunctionsSupported() {
 }
 
 /**
- * Causes the test to stop and be skipped at runtime.
- * reason: Message describing the reason the test has been skipped.
- */
-static inline void HIP_SKIP_TEST(char const* const reason) noexcept {
-  // ctest is setup to parse for "HIP_SKIP_THIS_TEST", at which point it will skip the test.
-  std::cout << "Skipping test. Reason: " << reason << '\n' << "HIP_SKIP_THIS_TEST" << std::endl;
-}
-
-/**
  * @brief Helper template that returns the expected arguments of a kernel.
  *
  * @return constexpr std::tuple<FArgs...> the expected arguments of the kernel.
@@ -627,14 +625,12 @@ class BlockingContext {
 // is supported on the current device.
 #define CHECK_IMAGE_SUPPORT                                                                        \
   if (!HipTest::isImageSupported()) {                                                              \
-    HipTest::HIP_SKIP_TEST("Texture is not supported on the device. Skipped.");                    \
-    return;                                                                                        \
+    HIP_SKIP_TEST("Texture is not supported on the device. Skipped.");                             \
   }
 
 #define CHECK_PCIE_ATOMIC_SUPPORT                                                                 \
   if (!HipTest::isPcieAtomicSupported()) {                                                        \
-    HipTest::HIP_SKIP_TEST("Device doesn't support pcie atomic, Skipped");                         \
-    return;                                                                                        \
+    HIP_SKIP_TEST("Device doesn't support pcie atomic, Skipped");                                 \
   }
 
 #define CHECK_P2P_SUPPORT                                                                          \
@@ -642,15 +638,13 @@ class BlockingContext {
   if (!HipTest::isP2PSupported(d1,d2)) {                                                           \
     std::string msg = "P2P access check failed between dev1:" + std::to_string(d1) + ",dev2:" +    \
                                                                 std::to_string(d2);                \
-    HipTest::HIP_SKIP_TEST(msg.c_str());                                                           \
-    return;                                                                                        \
+    HIP_SKIP_TEST(msg.c_str());                                                                    \
   }                                                                                                \
 // Use this before running tests that rely on warp match functions to check device support and
 // skip the current test if they are not available.
 #define CHECK_WARP_MATCH_FUNCTIONS_SUPPORT                                                         \
   if (!HipTest::areWarpMatchFunctionsSupported()) {                                                \
-    HipTest::HIP_SKIP_TEST("Warp Match Functions are not supported on the device. Skipped.");      \
-    return;                                                                                        \
+    HIP_SKIP_TEST("Warp Match Functions are not supported on the device. Skipped.");               \
   }
 
 // Call GENERATE_CAPTURE macro at the start of the test, before using BEGIN/END_CAPTURE.

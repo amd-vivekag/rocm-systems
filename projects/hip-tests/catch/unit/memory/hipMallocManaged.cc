@@ -69,8 +69,7 @@ HIP_TEST_CASE(Unit_hipMallocManaged_Basic) {
 HIP_TEST_CASE(Unit_hipMallocManaged_Advanced) {
   auto managed = HmmAttrPrint();
   if (managed != 1) {
-    HipTest::HIP_SKIP_TEST("GPU doesn't support managed memory so skipping test.");
-    return;
+    HIP_SKIP_TEST("GPU doesn't support managed memory so skipping test.");
   }
 
   float *A, *B, *C;

@@ -327,14 +327,13 @@ HIP_TEST_CASE(Unit_hipMemAdvise_TstAlignedAllocMem) {
       HIP_CHECK(hipStreamDestroy(strm));
     }
   } else {
-    HipTest::HIP_SKIP_TEST("GPU is not xnack enabled hence skipping the test");
+    HIP_SKIP_TEST("GPU is not xnack enabled hence skipping the test");
   }
 }
 
 HIP_TEST_CASE(Unit_hipMemAdvise_TstAlignedAllocMem_XNACK) {
   if (setenv("HSA_XNACK", "1", 1) != 0) {
-    HipTest::HIP_SKIP_TEST("Unable to set xnack on environment variable.");
-    return;
+    HIP_SKIP_TEST("Unable to set xnack on environment variable.");
   }
 
   hipDeviceProp_t prop;
@@ -347,7 +346,7 @@ HIP_TEST_CASE(Unit_hipMemAdvise_TstAlignedAllocMem_XNACK) {
     hip::SpawnProc proc("hipMemAdviseTstAlignedAllocMem", true);
     REQUIRE(proc.run() == 0);
   } else {
-    HipTest::HIP_SKIP_TEST("GPU is not xnack enabled hence skipping the test");
+    HIP_SKIP_TEST("GPU is not xnack enabled hence skipping the test");
   }
 }
 #endif

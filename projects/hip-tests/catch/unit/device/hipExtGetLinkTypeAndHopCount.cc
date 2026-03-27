@@ -43,8 +43,7 @@ HIP_TEST_CASE(Unit_hipExtGetLinkTypeAndHopCount_Positive_Basic) {
     std::string msg =
         "Skipped as peer access is not supported between devices : " + std::to_string(device1) +
         " " + std::to_string(device2);
-    HipTest::HIP_SKIP_TEST(msg.c_str());
-    return;
+    HIP_SKIP_TEST(msg.c_str());
   }
 
   uint32_t link_type1 = -1, hop_count1 = -1;

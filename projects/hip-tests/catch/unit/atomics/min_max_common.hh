@@ -366,8 +366,7 @@ void SingleDeviceMultipleKernelTest(const unsigned int kernel_count, const unsig
   int concurrent_kernels = 0;
   HIP_CHECK(hipDeviceGetAttribute(&concurrent_kernels, hipDeviceAttributeConcurrentKernels, 0));
   if (!concurrent_kernels) {
-    HipTest::HIP_SKIP_TEST("Test requires support for concurrent kernel execution");
-    return;
+    HIP_SKIP_TEST("Test requires support for concurrent kernel execution");
   }
 
   TestParams params;
@@ -395,13 +394,11 @@ void MultipleDeviceMultipleKernelTest(const unsigned int num_devices,
   if (num_devices > 1) {
     if (HipTest::getDeviceCount() < num_devices) {
       std::string msg = std::to_string(num_devices) + " devices are required";
-      HipTest::HIP_SKIP_TEST(msg.c_str());
-      return;
+      HIP_SKIP_TEST(msg.c_str());
     }
   }
   if (!HipTest::checkConcurrentKernels(num_devices)) {
-    HipTest::HIP_SKIP_TEST("Test requires support for concurrent kernel execution");
-    return;
+    HIP_SKIP_TEST("Test requires support for concurrent kernel execution");
   }
   TestParams params;
   params.num_devices = num_devices;

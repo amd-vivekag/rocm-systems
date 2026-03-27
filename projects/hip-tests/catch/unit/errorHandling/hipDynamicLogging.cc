@@ -83,8 +83,7 @@ HIP_TEST_CASE(Unit_hipDynamicLogging_Positive_Basic) {
   HIP_CHECK(hipGetDeviceCount(&numDevices));
 
   if (numDevices <= 0) {
-    HipTest::HIP_SKIP_TEST("Skipping hipDynamicLogging test - no devices available");
-    return;
+    HIP_SKIP_TEST("Skipping hipDynamicLogging test - no devices available");
   }
 
   REQUIRE(hipDynamicLoggingTest() == true);
@@ -107,8 +106,7 @@ HIP_TEST_CASE(Unit_hipDynamicLogging_Positive_MultipleEnableDisable) {
   HIP_CHECK(hipGetDeviceCount(&numDevices));
 
   if (numDevices <= 0) {
-    HipTest::HIP_SKIP_TEST("Skipping hipDynamicLogging test - no devices available");
-    return;
+    HIP_SKIP_TEST("Skipping hipDynamicLogging test - no devices available");
   }
 
   // Test multiple enable/disable cycles

@@ -150,9 +150,7 @@ HIP_TEST_CASE(Unit_hipGraphExecMemsetNodeSetParams_Negative_Parameters) {
   MemsetCommonNegative(std::bind(hipGraphExecMemsetNodeSetParams, graph_exec, node, _1), params);
 
   SECTION("Changing dst allocation device") {
-    if (HipTest::getDeviceCount() < 2) {
-      HipTest::HIP_SKIP_TEST("Test requires two connected GPUs");
-    } else {
+    if (HipTest::getDeviceCount() >= 2) {
       HIP_CHECK(hipSetDevice(1));
       LinearAllocGuard<int> new_alloc(LinearAllocs::hipMalloc, 4 * sizeof(int));
       params.dst = new_alloc.ptr();

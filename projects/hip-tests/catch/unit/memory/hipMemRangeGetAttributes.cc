@@ -10,9 +10,8 @@
 #include <utils.hh>
 
 HIP_TEST_CASE(Unit_hipMemRangeGetAttributes_Positive_Basic) {
-  if (!DeviceAttributesSupport(0, hipDeviceAttributeManagedMemory)) {
-    HipTest::HIP_SKIP_TEST("Managed memory not supported");
-    return;
+  if (!DeviceAttributesSupport(0, hipDeviceAttributeManagedMemory)) {    
+    HIP_SKIP_TEST("Managed memory not supported");
   }
 
   LinearAllocGuard<void> allocation(LinearAllocs::hipMallocManaged, kPageSize);
@@ -49,8 +48,7 @@ HIP_TEST_CASE(Unit_hipMemRangeGetAttributes_Positive_Basic) {
 
 HIP_TEST_CASE(Unit_hipMemRangeGetAttributes_Negative_Parameters) {
   if (!DeviceAttributesSupport(0, hipDeviceAttributeManagedMemory)) {
-    HipTest::HIP_SKIP_TEST("Managed memory not supported");
-    return;
+    HIP_SKIP_TEST("Managed memory not supported");
   }
 
   constexpr size_t num_attributes = 4;

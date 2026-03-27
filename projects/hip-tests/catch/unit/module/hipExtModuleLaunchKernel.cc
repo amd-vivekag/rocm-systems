@@ -106,8 +106,7 @@ HIP_TEST_CASE(Unit_hipExtModuleLaunchKernel_NonUniformWorkGroup) {
   // first check if uniform_work_group_size = 1.
   const std::regex regexp("uniform_work_group_size\\s*:\\s*1");
   if (false == searchRegExpr(regexp, "copyKernel.s")) {
-    HipTest::HIP_SKIP_TEST("uniform_work_group_size != 1. Skipping test ...");
-    return;
+    HIP_SKIP_TEST("uniform_work_group_size != 1. Skipping test ...");
   }
   REQUIRE(true == searchRegExpr(regexp, "copyKernel.s"));
   auto isEven = GENERATE(0, 1);

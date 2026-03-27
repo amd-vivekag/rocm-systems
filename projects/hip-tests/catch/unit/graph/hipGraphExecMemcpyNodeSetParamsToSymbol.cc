@@ -166,9 +166,7 @@ HIP_TEST_CASE(Unit_hipGraphExecMemcpyNodeSetParamsToSymbol_Negative_Parameters) 
   }
 
   SECTION("Changing src allocation device") {
-    if (HipTest::getDeviceCount() < 2) {
-      HipTest::HIP_SKIP_TEST("Test requires two connected GPUs");
-    } else {
+    if (HipTest::getDeviceCount() >= 2) {
       HIP_CHECK(hipSetDevice(1));
       LinearAllocGuard<int> new_var(LinearAllocs::hipMalloc, sizeof(int));
       HIP_CHECK_ERROR(hipGraphExecMemcpyNodeSetParamsToSymbol(

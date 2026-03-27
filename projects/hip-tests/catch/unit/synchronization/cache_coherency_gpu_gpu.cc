@@ -99,19 +99,16 @@ static bool gpu_to_gpu_coherency() {
 
   HIP_CHECK(hipGetDeviceCount(&numDevices));
   if (numDevices < numTestDevices) {
-    HipTest::HIP_SKIP_TEST("Skipping because devices < 2");
-    return true;
+    HIP_SKIP_TEST("Skipping because devices < 2");
   }
   SECTION("With device fine grained buffer") {
     HIP_CHECK(hipDeviceGetAttribute(&deviceFineGrain, hipDeviceAttributeFineGrainSupport, 0));
     if (deviceFineGrain == 0) {
-      HipTest::HIP_SKIP_TEST("The test skipped due to deviceFineGrain = 0 on device 0");
-      return true;
+      HIP_SKIP_TEST("The test skipped due to deviceFineGrain = 0 on device 0");
     }
     HIP_CHECK(hipDeviceGetAttribute(&deviceFineGrain, hipDeviceAttributeFineGrainSupport, 1));
     if (deviceFineGrain == 0) {
-      HipTest::HIP_SKIP_TEST("The test skipped due to deviceFineGrain = 0 on device 1");
-      return true;
+      HIP_SKIP_TEST("The test skipped due to deviceFineGrain = 0 on device 1");
     }
     HIP_CHECK(hipSetDevice(0));
     HIP_CHECK(hipDeviceEnablePeerAccess(1, 0));

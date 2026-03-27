@@ -38,9 +38,7 @@ HIP_TEMPLATE_TEST_CASE(Unit_hipMemcpyDtoD_Basic, int, float,
     HIP_CHECK(hipDeviceCanAccessPeer(&canAccessPeer, 0, 1));
     HIP_CHECK(hipSetDevice(0));
     if (!canAccessPeer) {
-      std::string msg = "Device is not capable of directly accessing memory from peerDevice. Skipping the test.";
-      HipTest::HIP_SKIP_TEST(msg.c_str());
-      return;
+      HIP_SKIP_TEST("Device is not capable of directly accessing memory from peerDevice. Skipping");
     }
     HIP_CHECK(hipDeviceEnablePeerAccess(1, 0));
     HipTest::initArrays<TestType>(&A_d, &B_d, &C_d, &A_h, &B_h, &C_h, NUM_ELM, false);

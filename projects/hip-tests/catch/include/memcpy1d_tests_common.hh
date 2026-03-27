@@ -128,8 +128,7 @@ void MemcpyDeviceToDeviceShell(F memcpy_func, const hipStream_t kernel_stream = 
     if (!can_access_peer) {
       std::string msg = "Skipped as peer access cannot be enabled between devices " +
           std::to_string(src_device) + " " + std::to_string(dst_device);
-      HipTest::HIP_SKIP_TEST(msg.c_str());
-      return;
+      HIP_SKIP_TEST(msg.c_str());
     }
     HIP_CHECK(hipDeviceEnablePeerAccess(dst_device, 0));
   }

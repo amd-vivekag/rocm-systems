@@ -48,10 +48,9 @@ static void RunBenchmark() {
  */
 HIP_TEST_CASE(Performance_hipMemPoolCreate) {
   if (!AreMemPoolsSupported(0)) {
-    HipTest::HIP_SKIP_TEST(
+    HIP_SKIP_TEST(
         "GPU 0 doesn't support hipDeviceAttributeMemoryPoolsSupported "
-        "attribute. Hence skipping the testing with Pass result.\n");
-    return;
+        "attribute. Hence skipping the testing with Pass result.");
   }
   RunBenchmark();
 }

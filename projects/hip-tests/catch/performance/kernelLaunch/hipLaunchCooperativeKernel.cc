@@ -81,8 +81,7 @@ template <KernelType kernel_type, bool timer_type> static void RunBenchmark(bool
  */
 HIP_TEST_CASE(Performance_hipLaunchCooperativeKernel) {
   if (!DeviceAttributesSupport(0, hipDeviceAttributeCooperativeLaunch)) {
-    HipTest::HIP_SKIP_TEST("CooperativeLaunch not supported");
-    return;
+    HIP_SKIP_TEST("CooperativeLaunch not supported");
   }
 
   bool sync = GENERATE(true, false);

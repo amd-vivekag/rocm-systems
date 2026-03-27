@@ -274,8 +274,7 @@ void DefaultPT2_StrmWaitEvent() {
   int device;
   HIP_CHECK(hipGetDevice(&device));
   if (!DeviceAttributesSupport(device, hipDeviceAttributeManagedMemory)) {
-    HipTest::HIP_SKIP_TEST("Managed memory is not supported");
-    return;
+    HIP_SKIP_TEST("Managed memory is not supported");
   }
 
   hipEvent_t evt;

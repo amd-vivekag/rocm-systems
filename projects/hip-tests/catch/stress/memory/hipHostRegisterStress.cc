@@ -46,8 +46,7 @@ HIP_TEST_CASE(Stress_hipHostRegister_Oversubscription) {
 #if HT_AMD
   if (std::string::npos == arch.find("xnack+")) {
     const char* msg = "Xnack not supported. Skipping test ..";
-    HipTest::HIP_SKIP_TEST(msg);
-    return;
+    HIP_SKIP_TEST(msg);
   }
 #endif
   size_t maxGpuMem = 0, availableMem = 0;
@@ -70,8 +69,7 @@ HIP_TEST_CASE(Stress_hipHostRegister_Oversubscription) {
   // Ensure that allocsize < hostMemFree
   if (allocsize >= hostMemFree) {
     const char* msg = "Free Host Memory is insufficient. Skipping test ...";
-    HipTest::HIP_SKIP_TEST(msg);
-    return;
+    HIP_SKIP_TEST(msg);
   }
   uint8_t* A = reinterpret_cast<uint8_t*>(malloc(allocsize));
   uint8_t* ptr;
