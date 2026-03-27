@@ -27,8 +27,8 @@ rocprofiler_add_integration_execute_test(
     rocprofv3-trace-roctx-python-bindings
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> --marker-trace --summary -u sec -d
-        ${CMAKE_CURRENT_BINARY_DIR}/marker-python-bindings -o out --output-format csv json
-        pftrace --log-level ${LOG_LEVEL} -- ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_BINARY_DIR}/marker-python-bindings -o out --disable-pid-suffix
+        --output-format csv json pftrace --log-level ${LOG_LEVEL} -- ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_BINARY_DIR}/marker.py
     DEPENDS rocprofiler-sdk::rocprofv3
     TIMEOUT 45

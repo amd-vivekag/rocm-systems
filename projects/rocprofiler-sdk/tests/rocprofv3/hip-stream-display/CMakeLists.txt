@@ -39,8 +39,8 @@ rocprofiler_add_integration_execute_test(
     rocprofv3-test-hip-stream-display
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> --kernel-rename -s -d
-        ${CMAKE_CURRENT_BINARY_DIR}/%tag%-trace -o out --output-format json pftrace csv
-        --log-level env -- $<TARGET_FILE:hip-streams>
+        ${CMAKE_CURRENT_BINARY_DIR}/%tag%-trace -o out --disable-pid-suffix
+        --output-format json pftrace csv --log-level env -- $<TARGET_FILE:hip-streams>
     DEPENDS hip-streams
     TIMEOUT 60
     LABELS "integration-tests"

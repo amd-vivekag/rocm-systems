@@ -74,6 +74,7 @@ struct output_config
     bool                     annotate_args               = false;
     bool                     annotate_kfd                = false;
     bool                     annotate_pmc                = false;
+    bool                     disable_pid_suffix          = false;
     uint64_t                 stats_summary_unit_value    = 1;
     size_t                   perfetto_shmem_size_hint    = defaults::perfetto_shmem_size_hint_kb;
     size_t                   perfetto_buffer_size        = defaults::perfetto_buffer_size_kb;

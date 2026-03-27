@@ -49,8 +49,9 @@ rocprofiler_add_integration_execute_test(
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> --kernel-trace --pc-sampling-unit cycles
         --pc-sampling-method stochastic --pc-sampling-interval 1048576 -d
-        ${CMAKE_CURRENT_BINARY_DIR}/pc_sampling_cmd_input -o out --output-format csv json
-        -- $<TARGET_FILE:transpose> ${TRANSPOSE_NUM_THREADS} ${TRANSPOSE_NUM_ITERATIONS}
+        ${CMAKE_CURRENT_BINARY_DIR}/pc_sampling_cmd_input -o out --disable-pid-suffix
+        --output-format csv json -- $<TARGET_FILE:transpose> ${TRANSPOSE_NUM_THREADS}
+        ${TRANSPOSE_NUM_ITERATIONS}
     DEPENDS transpose
     TIMEOUT 90
     LABELS "integration-tests;pc-sampling;stochastic"

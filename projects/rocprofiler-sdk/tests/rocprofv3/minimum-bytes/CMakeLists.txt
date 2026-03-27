@@ -19,7 +19,7 @@ rocprofiler_add_integration_execute_test(
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> -i
         ${CMAKE_CURRENT_BINARY_DIR}/input.json --output-format csv json pftrace -d
-        ${CMAKE_CURRENT_BINARY_DIR}/%argt%-kernel-trace -o out --
+        ${CMAKE_CURRENT_BINARY_DIR}/%argt%-kernel-trace -o out --disable-pid-suffix --
         $<TARGET_FILE:simple-transpose>
     DEPENDS simple-transpose
     TIMEOUT 45

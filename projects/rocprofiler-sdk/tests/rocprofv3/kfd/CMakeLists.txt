@@ -28,8 +28,9 @@ foreach(_XNACK on off)
         NAME rocprofv3-test-kfd-xnack-${_XNACK}-execute
         COMMAND
             $<TARGET_FILE:rocprofiler-sdk::rocprofv3> --kfd-trace -d
-            ${CMAKE_CURRENT_BINARY_DIR}/kfd-xnack-${_XNACK}-trace -o out --output-format
-            json --log-level env -- $<TARGET_FILE:transpose>)
+            ${CMAKE_CURRENT_BINARY_DIR}/kfd-xnack-${_XNACK}-trace -o out
+            --disable-pid-suffix --output-format json --log-level env --
+            $<TARGET_FILE:transpose>)
 
     set_tests_properties(
         rocprofv3-test-kfd-xnack-${_XNACK}-execute

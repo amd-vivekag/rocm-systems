@@ -39,8 +39,9 @@ rocprofiler_add_integration_execute_test(
     rocprofv3-test-hip-streams-per-thread
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> -s -d
-        ${CMAKE_CURRENT_BINARY_DIR}/%tag%-trace -o out --output-format json pftrace csv
-        --log-level env -- $<TARGET_FILE:hip-streams-per-thread> ${NUM_THREADS}
+        ${CMAKE_CURRENT_BINARY_DIR}/%tag%-trace -o out --disable-pid-suffix
+        --output-format json pftrace csv --log-level env --
+        $<TARGET_FILE:hip-streams-per-thread> ${NUM_THREADS}
     DEPENDS hip-streams-per-thread
     TIMEOUT 60
     LABELS "integration-tests"

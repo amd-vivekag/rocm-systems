@@ -23,6 +23,7 @@ rocprofiler_add_integration_execute_test(
     TIMEOUT 120
     LABELS "integration-tests"
     PRELOAD "${PRELOAD_ENV}"
+    ENVIRONMENT "ROCPROF_DISABLE_PID_SUFFIX=1"
     FIXTURES_SETUP rocprofv3-test-counter-collection-kernel-filtering-input-json)
 
 rocprofiler_add_integration_validate_test(
@@ -56,8 +57,8 @@ rocprofiler_add_integration_execute_test(
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> -i ${CMAKE_CURRENT_BINARY_DIR}/input.txt
         --kernel-include-regex ".*kernel" --kernel-exclude-regex "multiply" -T -d
-        ${CMAKE_CURRENT_BINARY_DIR}/cmd_input -o out --output-format csv --
-        $<TARGET_FILE:vector-ops>
+        ${CMAKE_CURRENT_BINARY_DIR}/cmd_input -o out --disable-pid-suffix --output-format
+        csv -- $<TARGET_FILE:vector-ops>
     DEPENDS vector-ops
     TIMEOUT 120
     LABELS "integration-tests"
@@ -80,8 +81,8 @@ rocprofiler_add_integration_execute_test(
     rocprofv3-test-counter-collection-kernel-filtering-input-yaml
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> -i ${CMAKE_CURRENT_BINARY_DIR}/input.yml
-        -T -d ${CMAKE_CURRENT_BINARY_DIR}/yaml_input -o out --output-format csv json --
-        $<TARGET_FILE:vector-ops>
+        -T -d ${CMAKE_CURRENT_BINARY_DIR}/yaml_input -o out --disable-pid-suffix
+        --output-format csv json -- $<TARGET_FILE:vector-ops>
     DEPENDS vector-ops
     TIMEOUT 120
     LABELS "integration-tests"

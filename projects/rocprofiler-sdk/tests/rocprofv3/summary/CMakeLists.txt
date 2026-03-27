@@ -32,9 +32,9 @@ rocprofiler_add_integration_execute_test(
     rocprofv3-test-summary-cmd-line
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> -d
-        ${CMAKE_CURRENT_BINARY_DIR}/%tag%-trace-cmd-line -o out --output-format pftrace
-        json otf2 --log-level env --runtime-trace --kernel-rename --summary
-        --summary-output-file summary --summary-per-domain --summary-groups
+        ${CMAKE_CURRENT_BINARY_DIR}/%tag%-trace-cmd-line -o out --disable-pid-suffix
+        --output-format pftrace json otf2 --log-level env --runtime-trace --kernel-rename
+        --summary --summary-output-file summary --summary-per-domain --summary-groups
         "KERNEL_DISPATCH|MEMORY_COPY" ".*_API" -- $<TARGET_FILE:transpose> 2 500 10
     DEPENDS transpose
     TIMEOUT 45
@@ -77,6 +77,7 @@ rocprofiler_add_integration_execute_test(
     LABELS "integration-tests"
     PRELOAD "${PRELOAD_ENV}"
     ENVIRONMENT "ARBITRARY_ENV_VARIABLE=%tag%-trace-inp-yaml"
+                "ROCPROF_DISABLE_PID_SUFFIX=1"
     FIXTURES_SETUP rocprofv3-test-summary-inp-yaml)
 
 rocprofiler_add_integration_validate_test(

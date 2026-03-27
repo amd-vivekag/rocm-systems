@@ -40,7 +40,7 @@ rocprofiler_add_integration_execute_test(
     rocprofv3-test-counter-collection-cli-multipass
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> --pmc SQ_WAVES --pmc GRBM_COUNT -d
-        ${CMAKE_CURRENT_BINARY_DIR}/%argt%-cc -o out -f csv --
+        ${CMAKE_CURRENT_BINARY_DIR}/%argt%-cc -o out --disable-pid-suffix -f csv --
         $<TARGET_FILE:simple-transpose>
     DEPENDS simple-transpose
     TIMEOUT 45

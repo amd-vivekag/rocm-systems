@@ -45,8 +45,8 @@ rocprofiler_add_integration_execute_test(
     rocprofv3-test-rocpd-no-rename
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> -d
-        ${CMAKE_CURRENT_BINARY_DIR}/rocpd-no-kernel-rename -o out --output-format rocpd
-        json csv --kernel-trace -- $<TARGET_FILE:simple-transpose>
+        ${CMAKE_CURRENT_BINARY_DIR}/rocpd-no-kernel-rename -o out --disable-pid-suffix
+        --output-format rocpd json csv --kernel-trace -- $<TARGET_FILE:simple-transpose>
     DEPENDS simple-transpose
     TIMEOUT 120
     LABELS "integration-tests;rocpd"
@@ -58,8 +58,9 @@ rocprofiler_add_integration_execute_test(
     rocprofv3-test-rocpd-rename
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> -d
-        ${CMAKE_CURRENT_BINARY_DIR}/rocpd-kernel-rename -o out --output-format csv
-        --kernel-trace --kernel-rename -- $<TARGET_FILE:simple-transpose>
+        ${CMAKE_CURRENT_BINARY_DIR}/rocpd-kernel-rename -o out --disable-pid-suffix
+        --output-format csv --kernel-trace --kernel-rename --
+        $<TARGET_FILE:simple-transpose>
     DEPENDS simple-transpose
     TIMEOUT 120
     LABELS "integration-tests;rocpd"

@@ -27,8 +27,9 @@ rocprofiler_add_integration_execute_test(
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> --kernel-trace --pc-sampling-unit time
         --pc-sampling-method host_trap --pc-sampling-interval 1 --agent-index absolute -d
-        ${CMAKE_CURRENT_BINARY_DIR}/pc_sampling_cmd_input -o out --output-format csv --
-        $<TARGET_FILE:transpose> ${TRANSPOSE_NUM_THREADS} ${TRANSPOSE_NUM_ITERATIONS}
+        ${CMAKE_CURRENT_BINARY_DIR}/pc_sampling_cmd_input -o out --disable-pid-suffix
+        --output-format csv -- $<TARGET_FILE:transpose> ${TRANSPOSE_NUM_THREADS}
+        ${TRANSPOSE_NUM_ITERATIONS}
     DEPENDS transpose
     TIMEOUT 90
     LABELS "integration-tests;pc-sampling"
@@ -98,8 +99,9 @@ rocprofiler_add_integration_execute_test(
     rocprofv3-test-pc-sampling-host-trap-transpose-multiple-agents-input-yaml
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> -i ${CMAKE_CURRENT_BINARY_DIR}/input.yml
-        -d ${CMAKE_CURRENT_BINARY_DIR}/pc_sampling_yaml_input -o out --output-format csv
-        -- $<TARGET_FILE:transpose> ${TRANSPOSE_NUM_THREADS} ${TRANSPOSE_NUM_ITERATIONS}
+        -d ${CMAKE_CURRENT_BINARY_DIR}/pc_sampling_yaml_input -o out --disable-pid-suffix
+        --output-format csv -- $<TARGET_FILE:transpose> ${TRANSPOSE_NUM_THREADS}
+        ${TRANSPOSE_NUM_ITERATIONS}
     DEPENDS transpose
     TIMEOUT 90
     LABELS "integration-tests;pc-sampling"

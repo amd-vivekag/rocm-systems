@@ -29,8 +29,9 @@ rocprofiler_add_integration_execute_test(
     rocprofv3-test-rocpd-scratch
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> --scratch-memory-trace -d
-        ${CMAKE_CURRENT_BINARY_DIR}/rocpd-input-data -o out --output-format rocpd json
-        --runtime-trace --kernel-rename -- $<TARGET_FILE:scratch-memory>
+        ${CMAKE_CURRENT_BINARY_DIR}/rocpd-input-data -o out --disable-pid-suffix
+        --output-format rocpd json --runtime-trace --kernel-rename --
+        $<TARGET_FILE:scratch-memory>
     DEPENDS scratch-memory
     TIMEOUT 120
     LABELS "integration-tests;rocpd"

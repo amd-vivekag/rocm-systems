@@ -24,6 +24,7 @@ rocprofiler_add_integration_execute_test(
     TIMEOUT 120
     LABELS "integration-tests"
     PRELOAD "${PRELOAD_ENV}"
+    ENVIRONMENT "ROCPROF_DISABLE_PID_SUFFIX=1"
     FIXTURES_SETUP rocprofv3-test-counter-collection-kernel-filtering-range-filter)
 
 rocprofiler_add_integration_validate_test(

@@ -20,8 +20,9 @@ foreach(_OUTPUT_FORMAT csv json)
         rocprofv3-test-scratch-memory-tracing-${_OUTPUT_FORMAT}
         COMMAND
             $<TARGET_FILE:rocprofiler-sdk::rocprofv3> --scratch-memory-trace -d
-            ${CMAKE_CURRENT_BINARY_DIR}/%tag%-trace -o out --output-format
-            ${_OUTPUT_FORMAT} --log-level env -- $<TARGET_FILE:scratch-memory>
+            ${CMAKE_CURRENT_BINARY_DIR}/%tag%-trace -o out --disable-pid-suffix
+            --output-format ${_OUTPUT_FORMAT} --log-level env --
+            $<TARGET_FILE:scratch-memory>
         DEPENDS scratch-memory
         TIMEOUT 45
         LABELS "integration-tests"

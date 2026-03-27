@@ -58,22 +58,24 @@ output_config::parse_env()
         common::get_env("ROCPROF_PERFETTO_SHMEM_SIZE_HINT_KB", perfetto_shmem_size_hint);
     perfetto_buffer_size = common::get_env("ROCPROF_PERFETTO_BUFFER_SIZE_KB", perfetto_buffer_size);
 
-    output_path    = common::get_env("ROCPROF_OUTPUT_PATH", output_path);
-    output_file    = common::get_env("ROCPROF_OUTPUT_FILE_NAME", output_file);
-    tmp_directory  = common::get_env("ROCPROF_TMPDIR", tmp_directory);
-    kernel_rename  = common::get_env("ROCPROF_KERNEL_RENAME", false);
-    group_by_queue = common::get_env("ROCPROF_GROUP_BY_QUEUE", false);
-    annotate_args  = common::get_env("ROCPROF_ANNOTATE_ARGS", false);
-    annotate_kfd   = common::get_env("ROCPROF_ANNOTATE_KFD", false);
-    annotate_pmc   = common::get_env("ROCPROF_ANNOTATE_PMC", false);
+    output_path        = common::get_env("ROCPROF_OUTPUT_PATH", output_path);
+    output_file        = common::get_env("ROCPROF_OUTPUT_FILE_NAME", output_file);
+    tmp_directory      = common::get_env("ROCPROF_TMPDIR", tmp_directory);
+    kernel_rename      = common::get_env("ROCPROF_KERNEL_RENAME", false);
+    group_by_queue     = common::get_env("ROCPROF_GROUP_BY_QUEUE", false);
+    annotate_args      = common::get_env("ROCPROF_ANNOTATE_ARGS", false);
+    annotate_kfd       = common::get_env("ROCPROF_ANNOTATE_KFD", false);
+    annotate_pmc       = common::get_env("ROCPROF_ANNOTATE_PMC", false);
+    disable_pid_suffix = common::get_env("ROCPROF_DISABLE_PID_SUFFIX", false);
 
     // Ensure PID token is in the output pattern for multi-process support.
     // Treat "%pid%", "{pid}", and "%p" as equivalent forms.
-    if(output_file.find("%pid%") == std::string::npos &&
+    // Skip if ROCPROF_DISABLE_PID_SUFFIX is set to true.
+    if(!disable_pid_suffix && output_file.find("%pid%") == std::string::npos &&
        output_file.find("{pid}") == std::string::npos &&
        output_file.find("%p") == std::string::npos)
     {
-        ROCP_WARNING << fmt::format(
+        ROCP_INFO << fmt::format(
             "Modifying output file name from {} to {}", output_file, output_file + "_%pid%");
         output_file += "_%pid%";
     }

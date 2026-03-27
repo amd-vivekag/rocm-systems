@@ -41,8 +41,8 @@ rocprofiler_add_integration_execute_test(
     rocprofv3-test-conversion-script
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> -i ${CMAKE_CURRENT_BINARY_DIR}/input.txt
-        -T -d ${CMAKE_CURRENT_BINARY_DIR}/out_conversion_script -o pmc1 --output-format
-        csv -- $<TARGET_FILE:vector-ops>
+        -T -d ${CMAKE_CURRENT_BINARY_DIR}/out_conversion_script -o pmc1
+        --disable-pid-suffix --output-format csv -- $<TARGET_FILE:vector-ops>
     DEPENDS vector-ops
     LABELS "integration-tests"
     TIMEOUT 45

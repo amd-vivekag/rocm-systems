@@ -52,6 +52,7 @@ rocprofiler_add_integration_execute_test(
     TIMEOUT 45
     LABELS "integration-tests"
     PRELOAD "${PRELOAD_ENV}"
+    ENVIRONMENT "ROCPROF_DISABLE_PID_SUFFIX=1"
     FIXTURES_SETUP rocprofv3-test-agent-index-json-absolute)
 
 rocprofiler_add_integration_execute_test(
@@ -65,6 +66,7 @@ rocprofiler_add_integration_execute_test(
     TIMEOUT 45
     LABELS "integration-tests"
     PRELOAD "${PRELOAD_ENV}"
+    ENVIRONMENT "ROCPROF_DISABLE_PID_SUFFIX=1"
     FIXTURES_SETUP rocprofv3-test-agent-index-json-type-relative)
 
 rocprofiler_add_integration_execute_test(
@@ -78,6 +80,7 @@ rocprofiler_add_integration_execute_test(
     TIMEOUT 45
     LABELS "integration-tests"
     PRELOAD "${PRELOAD_ENV}"
+    ENVIRONMENT "ROCPROF_DISABLE_PID_SUFFIX=1"
     FIXTURES_SETUP rocprofv3-test-agent-index-json-relative)
 
 rocprofiler_add_integration_validate_test(

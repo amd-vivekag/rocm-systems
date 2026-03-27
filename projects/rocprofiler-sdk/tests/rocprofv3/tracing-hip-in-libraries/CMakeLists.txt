@@ -25,7 +25,7 @@ foreach(_OUTPUT_FORMAT csv json pftrace otf2)
             $<TARGET_FILE:rocprofiler-sdk::rocprofv3> --hip-runtime-trace --hsa-core-trace
             --hsa-amd-trace --marker-trace --kernel-trace --memory-copy-trace --stats
             --output-format ${_OUTPUT_FORMAT} -d ${CMAKE_CURRENT_BINARY_DIR}/%argt%-trace
-            -o out ${PRELOAD_ARGS} -- $<TARGET_FILE:hip-in-libraries>
+            -o out --disable-pid-suffix ${PRELOAD_ARGS} -- $<TARGET_FILE:hip-in-libraries>
         DEPENDS hip-in-libraries
         TIMEOUT 120
         LABELS "integration-tests"

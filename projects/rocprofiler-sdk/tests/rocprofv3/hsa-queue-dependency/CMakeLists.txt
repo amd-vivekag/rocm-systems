@@ -18,8 +18,9 @@ rocprofiler_add_integration_execute_test(
     rocprofv3-test-hsa-multiqueue
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> --hsa-trace --kernel-trace -d
-        ${CMAKE_CURRENT_BINARY_DIR}/%argt%-trace -o out --output-format json csv pftrace
-        ${PRELOAD_ARGS} -- $<TARGET_FILE:multiqueue_testapp>
+        ${CMAKE_CURRENT_BINARY_DIR}/%argt%-trace -o out --disable-pid-suffix
+        --output-format json csv pftrace ${PRELOAD_ARGS} --
+        $<TARGET_FILE:multiqueue_testapp>
     DEPENDS multiqueue_testapp
     TIMEOUT 45
     LABELS "integration-tests"

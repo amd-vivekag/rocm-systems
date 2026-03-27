@@ -34,6 +34,7 @@ rocprofiler_add_integration_execute_test(
     TIMEOUT 45
     LABELS "integration-tests"
     PRELOAD "${PRELOAD_ENV}"
+    ENVIRONMENT "ROCPROF_DISABLE_PID_SUFFIX=1"
     DISABLED "${TRANSPOSE_ROCTRACER_ROCTX_DISABLED}"
     FIXTURES_SETUP rocprofv3-test-roctracer-roctx-trace)
 

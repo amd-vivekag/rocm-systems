@@ -42,8 +42,8 @@ rocprofiler_add_integration_execute_test(
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> --marker-trace --kernel-trace
         --selected-regions-ref-count --selected-regions -d
-        ${CMAKE_CURRENT_BINARY_DIR}/%tag%-nested-trace -o out --output-format json
-        --log-level info -- $<TARGET_FILE:roctx-pause-resume>
+        ${CMAKE_CURRENT_BINARY_DIR}/%tag%-nested-trace -o out --disable-pid-suffix
+        --output-format json --log-level info -- $<TARGET_FILE:roctx-pause-resume>
     DEPENDS roctx-pause-resume
     TIMEOUT 45
     LABELS "integration-tests;pause-resume"

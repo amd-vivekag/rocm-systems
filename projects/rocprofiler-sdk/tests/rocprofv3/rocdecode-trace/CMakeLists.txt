@@ -35,8 +35,8 @@ rocprofiler_add_integration_execute_test(
     rocprofv3-test-rocdecode-tracing
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> --rocdecode-trace -d
-        ${CMAKE_CURRENT_BINARY_DIR}/%tag%-trace -o out --output-format json csv pftrace
-        otf2 --log-level env --
+        ${CMAKE_CURRENT_BINARY_DIR}/%tag%-trace -o out --disable-pid-suffix
+        --output-format json csv pftrace otf2 --log-level env --
         $<IF:$<TARGET_EXISTS:rocdecode-demo>,$<TARGET_FILE:rocdecode-demo>,rocdecode-demo>
         -i ${ROCDECODE_VIDEO_FILE}
     DEPENDS rocdecode-demo

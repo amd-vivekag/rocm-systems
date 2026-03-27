@@ -41,9 +41,9 @@ rocprofiler_add_integration_execute_test(
     rocprofv3-test-rocpd
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> -d
-        ${CMAKE_CURRENT_BINARY_DIR}/rocpd-input-data -o out --output-format rocpd json
-        --runtime-trace --kernel-rename --output-config --pmc SQ_WAVES --
-        $<TARGET_FILE:reproducible-dispatch-count> 500 2
+        ${CMAKE_CURRENT_BINARY_DIR}/rocpd-input-data -o out --disable-pid-suffix
+        --output-format rocpd json --runtime-trace --kernel-rename --output-config --pmc
+        SQ_WAVES -- $<TARGET_FILE:reproducible-dispatch-count> 500 2
     DEPENDS reproducible-dispatch-count
     TIMEOUT 120
     LABELS "integration-tests;rocpd"
@@ -56,8 +56,8 @@ rocprofiler_add_integration_execute_test(
         ${MULTIPROC_LAUNCHER} ${Python3_EXECUTABLE}
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> -d
         ${CMAKE_CURRENT_BINARY_DIR}/rocpd-input-data-multiproc -o out_mp_%rank%
-        --output-format rocpd json --runtime-trace --kernel-rename --output-config --pmc
-        SQ_WAVES -- $<TARGET_FILE:reproducible-dispatch-count> 200 1
+        --disable-pid-suffix --output-format rocpd json --runtime-trace --kernel-rename
+        --output-config --pmc SQ_WAVES -- $<TARGET_FILE:reproducible-dispatch-count> 200 1
     DEPENDS reproducible-dispatch-count
     TIMEOUT 120
     LABELS "integration-tests;rocpd"
@@ -71,8 +71,8 @@ rocprofiler_add_integration_execute_test(
     rocprofv3-test-rocpd-execute2
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> -d
-        ${CMAKE_CURRENT_BINARY_DIR}/rocpd-input-data -o out2 --output-format rocpd
-        --runtime-trace --kernel-rename --pmc SQ_WAVES --
+        ${CMAKE_CURRENT_BINARY_DIR}/rocpd-input-data -o out2 --disable-pid-suffix
+        --output-format rocpd --runtime-trace --kernel-rename --pmc SQ_WAVES --
         $<TARGET_FILE:reproducible-dispatch-count> 500 2
     DEPENDS reproducible-dispatch-count
     TIMEOUT 120

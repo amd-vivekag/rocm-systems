@@ -18,8 +18,8 @@ rocprofiler_add_integration_execute_test(
     rocprofv3-test-counter-collection-txt-pmc2
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> -i ${CMAKE_CURRENT_BINARY_DIR}/input.txt
-        --output-format CSV JSON -d ${CMAKE_CURRENT_BINARY_DIR}/%argt%-cc -o out --
-        $<TARGET_FILE:simple-transpose>
+        --output-format CSV JSON -d ${CMAKE_CURRENT_BINARY_DIR}/%argt%-cc -o out
+        --disable-pid-suffix -- $<TARGET_FILE:simple-transpose>
     DEPENDS vector-ops
     TIMEOUT 45
     LABELS "integration-tests"

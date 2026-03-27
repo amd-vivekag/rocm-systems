@@ -19,8 +19,9 @@ rocprofiler_add_integration_execute_test(
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> --hsa-trace --kernel-trace -i
         ${CMAKE_CURRENT_BINARY_DIR}/input.txt -d
-        ${CMAKE_CURRENT_BINARY_DIR}/out_counter_collection_trace -o pmc --output-format
-        JSON PFTRACE CSV -- $<TARGET_FILE:simple-transpose>
+        ${CMAKE_CURRENT_BINARY_DIR}/out_counter_collection_trace -o pmc
+        --disable-pid-suffix --output-format JSON PFTRACE CSV --
+        $<TARGET_FILE:simple-transpose>
     DEPENDS simple-transpose
     TIMEOUT 90
     LABELS "integration-tests;application-replay"
@@ -58,8 +59,8 @@ foreach(_GROUP "single" "multiple")
         COMMAND
             $<TARGET_FILE:rocprofiler-sdk::rocprofv3> --sys-trace --kernel-rename --pmc
             ${cmdl_${_GROUP}} -d ${CMAKE_CURRENT_BINARY_DIR}/out_counter_collection_trace
-            -o cmdl/${_GROUP} --output-format JSON PFTRACE CSV -- $<TARGET_FILE:transpose>
-            2 50 5
+            -o cmdl/${_GROUP} --disable-pid-suffix --output-format JSON PFTRACE CSV --
+            $<TARGET_FILE:transpose> 2 50 5
         DEPENDS transpose
         TIMEOUT 45
         PRELOAD "${PRELOAD_ENV}"

@@ -17,8 +17,9 @@ rocprofiler_add_integration_execute_test(
     rocprofv3-test-memory-allocation-tracing
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> --memory-allocation-trace -d
-        ${CMAKE_CURRENT_BINARY_DIR}/%tag%-trace -o out --output-format json otf2 csv
-        --log-level env -- $<TARGET_FILE:hsa-memory-allocation>
+        ${CMAKE_CURRENT_BINARY_DIR}/%tag%-trace -o out --disable-pid-suffix
+        --output-format json otf2 csv --log-level env --
+        $<TARGET_FILE:hsa-memory-allocation>
     DEPENDS hsa-memory-allocation
     TIMEOUT 45
     LABELS "integration-tests"

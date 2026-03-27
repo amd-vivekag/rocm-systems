@@ -41,8 +41,8 @@ rocprofiler_add_integration_execute_test(
     rocprofv3-test-roctx-pause-resume-tracing
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> --marker-trace --kernel-trace --pmc
-        SQ_WAVES -d ${CMAKE_CURRENT_BINARY_DIR}/%tag%-trace -o out --output-format json
-        --log-level info -- $<TARGET_FILE:roctx-pause-resume>
+        SQ_WAVES -d ${CMAKE_CURRENT_BINARY_DIR}/%tag%-trace -o out --disable-pid-suffix
+        --output-format json --log-level info -- $<TARGET_FILE:roctx-pause-resume>
     DEPENDS roctx-pause-resume
     TIMEOUT 45
     LABELS "integration-tests;pause-resume"

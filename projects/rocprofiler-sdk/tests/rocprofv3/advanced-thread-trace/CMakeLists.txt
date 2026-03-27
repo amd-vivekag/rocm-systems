@@ -71,8 +71,8 @@ rocprofiler_add_integration_execute_test(
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> ${COMMON_PARAMS}/cmd_input
         --att-target-cu 1 --att-shader-engine-mask 0x11 --kernel-include-regex copyD
-        --att-buffer-size 0x6000000 --att-simd-select 0x3 --att-serialize-all 1 -o out --
-        $<TARGET_FILE:hsa_code_object_testapp>
+        --att-buffer-size 0x6000000 --att-simd-select 0x3 --att-serialize-all 1 -o out
+        --disable-pid-suffix -- $<TARGET_FILE:hsa_code_object_testapp>
     DEPENDS hsa_code_object_testapp
     LABELS "integration-tests"
     TIMEOUT 45
@@ -197,7 +197,7 @@ rocprofiler_add_integration_execute_test(
 rocprofiler_add_integration_execute_test(
     rocprofv3-test-att-hsa-multiqueue-plus-pmc
     COMMAND $<TARGET_FILE:rocprofiler-sdk::rocprofv3> ${COMMON_PARAMS}/cmd_input --pmc
-            SQ_WAVES -o out -- $<TARGET_FILE:vector-ops>
+            SQ_WAVES -o out --disable-pid-suffix -- $<TARGET_FILE:vector-ops>
     DEPENDS vector-ops
     TIMEOUT 45
     LABELS "integration-tests"
@@ -206,8 +206,9 @@ rocprofiler_add_integration_execute_test(
 # Check for conflict PMC + activity
 rocprofiler_add_integration_execute_test(
     rocprofv3-test-att-hsa-multiqueue-activity-pmc-will-fail
-    COMMAND $<TARGET_FILE:rocprofiler-sdk::rocprofv3> ${COMMON_PARAMS}/cmd_input --pmc
-            SQ_WAVES -o out --att-activity 8 -- $<TARGET_FILE:vector-ops>
+    COMMAND
+        $<TARGET_FILE:rocprofiler-sdk::rocprofv3> ${COMMON_PARAMS}/cmd_input --pmc
+        SQ_WAVES -o out --disable-pid-suffix --att-activity 8 -- $<TARGET_FILE:vector-ops>
     DEPENDS vector-ops
     TIMEOUT 45
     LABELS "integration-tests"
@@ -217,8 +218,10 @@ rocprofiler_add_integration_execute_test(
 # Check for conflict Perfcounters + activity
 rocprofiler_add_integration_execute_test(
     rocprofv3-test-att-hsa-multiqueue-activity-perf-will-fail
-    COMMAND $<TARGET_FILE:rocprofiler-sdk::rocprofv3> ${COMMON_PARAMS}/cmd_input
-            --att-perfcounter-ctrl 8 -o out --att-activity 8 -- $<TARGET_FILE:vector-ops>
+    COMMAND
+        $<TARGET_FILE:rocprofiler-sdk::rocprofv3> ${COMMON_PARAMS}/cmd_input
+        --att-perfcounter-ctrl 8 -o out --disable-pid-suffix --att-activity 8 --
+        $<TARGET_FILE:vector-ops>
     DEPENDS vector-ops
     TIMEOUT 45
     LABELS "integration-tests"
@@ -242,7 +245,7 @@ set(PCS_ARGS --pc-sampling-beta-enabled 1 --pc-sampling-unit cycles
 rocprofiler_add_integration_execute_test(
     rocprofv3-test-att-plus-pc-sampling
     COMMAND $<TARGET_FILE:rocprofiler-sdk::rocprofv3> ${COMMON_PARAMS}/cmd_input
-            ${PCS_ARGS} -o out -- $<TARGET_FILE:vector-ops>
+            ${PCS_ARGS} -o out --disable-pid-suffix -- $<TARGET_FILE:vector-ops>
     DEPENDS vector-ops
     TIMEOUT 90
     LABELS "integration-tests;thread-trace;pc-sampling"
@@ -252,7 +255,7 @@ rocprofiler_add_integration_execute_test(
 rocprofiler_add_integration_execute_test(
     rocprofv3-test-att-gpu-index-two-gpus
     COMMAND $<TARGET_FILE:rocprofiler-sdk::rocprofv3> ${COMMON_PARAMS}/cmd_input -o out
-            --att-gpu-index 0,1 -- $<TARGET_FILE:vector-ops>
+            --disable-pid-suffix --att-gpu-index 0,1 -- $<TARGET_FILE:vector-ops>
     DEPENDS vector-ops
     TIMEOUT 45
     LABELS "integration-tests"
@@ -263,7 +266,7 @@ rocprofiler_add_integration_execute_test(
 rocprofiler_add_integration_execute_test(
     rocprofv3-test-att-gpu-index-will-fail
     COMMAND $<TARGET_FILE:rocprofiler-sdk::rocprofv3> ${COMMON_PARAMS}/cmd_input -o out
-            --att-gpu-index 0,9999 -- $<TARGET_FILE:vector-ops>
+            --disable-pid-suffix --att-gpu-index 0,9999 -- $<TARGET_FILE:vector-ops>
     DEPENDS vector-ops
     TIMEOUT 45
     LABELS "integration-tests"
@@ -281,7 +284,8 @@ rocprofiler_add_integration_execute_test(
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> ${COMMON_PARAMS}/perfcounter_target_cu
         --att-activity 6 --att-target-cu ${TARGET_CU} --att-perfcounter-target-only True
-        -o out --kernel-include-regex matrixTranspose -- $<TARGET_FILE:simple-transpose>
+        -o out --disable-pid-suffix --kernel-include-regex matrixTranspose --
+        $<TARGET_FILE:simple-transpose>
     DEPENDS simple-transpose
     TIMEOUT 45
     LABELS "integration-tests"

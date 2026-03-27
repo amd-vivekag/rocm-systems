@@ -43,8 +43,8 @@ rocprofiler_add_integration_execute_test(
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> --pc-sampling-unit cycles
         --pc-sampling-method stochastic --pc-sampling-interval 1048576 -d
-        ${CMAKE_CURRENT_BINARY_DIR}/pc_sampling_cmd_input -o out --output-format csv json
-        -- $<TARGET_FILE:exec-mask-manipulation>
+        ${CMAKE_CURRENT_BINARY_DIR}/pc_sampling_cmd_input -o out --disable-pid-suffix
+        --output-format csv json -- $<TARGET_FILE:exec-mask-manipulation>
     DEPENDS exec-mask-manipulation
     TIMEOUT 90
     LABELS "integration-tests;pc-sampling;stochastic"

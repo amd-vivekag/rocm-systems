@@ -34,8 +34,8 @@ rocprofiler_add_integration_execute_test(
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> -M --sys-trace no --hsa-trace=0
         --hsa-core-trace=1 --hip-compiler-trace False --hip-runtime-trace --kernel-trace
         --memory-copy-trace -d ${CMAKE_CURRENT_BINARY_DIR}/%argt%-trace-cmd-line -o out
-        --output-format pftrace json otf2 --log-level env --kernel-rename
-        --perfetto-shmem-size-hint 128 --perfetto-buffer-size 2048000
+        --disable-pid-suffix --output-format pftrace json otf2 --log-level env
+        --kernel-rename --perfetto-shmem-size-hint 128 --perfetto-buffer-size 2048000
         --perfetto-buffer-fill-policy ring_buffer --perfetto-backend inprocess --
         $<TARGET_FILE:transpose>
     DEPENDS transpose
@@ -74,6 +74,7 @@ rocprofiler_add_integration_execute_test(
     TIMEOUT 45
     LABELS "integration-tests"
     PRELOAD "${PRELOAD_ENV}"
+    ENVIRONMENT "ROCPROF_DISABLE_PID_SUFFIX=1"
     FIXTURES_SETUP rocprofv3-test-kernel-rename-inp-yaml)
 
 rocprofiler_add_integration_validate_test(

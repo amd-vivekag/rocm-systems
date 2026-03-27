@@ -401,6 +401,11 @@ For attachment profiling of running processes:
         type=str,
         required=False,
     )
+    add_parser_bool_argument(
+        io_options,
+        "--disable-pid-suffix",
+        help="Disable automatic PID suffix appending to output file names. By default, rocprofv3 appends '_{pid}' to output file names to prevent conflicts in multi-process scenarios.",
+    )
     io_options.add_argument(
         "-d",
         "--output-directory",
@@ -1490,6 +1495,9 @@ def run(app_args, args, **kwargs):
 
     update_env(
         "ROCPROF_OUTPUT_FORMAT", ",".join(args.output_format), append=True, join_char=","
+    )
+    update_env(
+        "ROCPROF_DISABLE_PID_SUFFIX", args.disable_pid_suffix, overwrite_if_true=True
     )
 
     if args.kokkos_trace:

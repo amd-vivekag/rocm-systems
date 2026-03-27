@@ -24,8 +24,9 @@ rocprofiler_add_integration_execute_test(
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> -M --hsa-trace --kernel-trace
         --memory-copy-trace --marker-trace --kfd-trace -d
-        ${CMAKE_CURRENT_BINARY_DIR}/%argt%-trace -o cmdl-input/out --output-format pftrace
-        csv json rocpd --log-level ${LOG_LEVEL} -- $<TARGET_FILE:simple-transpose>
+        ${CMAKE_CURRENT_BINARY_DIR}/%argt%-trace -o cmdl-input/out --disable-pid-suffix
+        --output-format pftrace csv json rocpd --log-level ${LOG_LEVEL} --
+        $<TARGET_FILE:simple-transpose>
     DEPENDS simple-transpose
     TIMEOUT 45
     LABELS "integration-tests"
@@ -71,6 +72,7 @@ rocprofiler_add_integration_execute_test(
     TIMEOUT 45
     LABELS "integration-tests;rocpd"
     PRELOAD "${PRELOAD_ENV}"
+    ENVIRONMENT "ROCPROF_DISABLE_PID_SUFFIX=1"
     FIXTURES_SETUP rocprofv3-test-trace-input-json
     FAIL_REGULAR_EXPRESSION
         "HSA_API|HIP_API|HIP_COMPILER_API|MARKER_CORE_API|MARKER_CONTROL_API|MARKER_NAME_API|KERNEL_DISPATCH|CODE_OBJECT"
@@ -108,8 +110,8 @@ rocprofiler_add_integration_execute_test(
     rocprofv3-test-systrace
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> --sys-trace -d
-        ${CMAKE_CURRENT_BINARY_DIR}/%argt%-systrace -o cmdl-input/out --output-format
-        pftrace csv json rocpd -- $<TARGET_FILE:simple-transpose>
+        ${CMAKE_CURRENT_BINARY_DIR}/%argt%-systrace -o cmdl-input/out --disable-pid-suffix
+        --output-format pftrace csv json rocpd -- $<TARGET_FILE:simple-transpose>
     DEPENDS simple-transpose
     TIMEOUT 45
     LABELS "integration-tests"
@@ -155,6 +157,7 @@ rocprofiler_add_integration_execute_test(
     TIMEOUT 45
     LABELS "integration-tests"
     PRELOAD "${PRELOAD_ENV}"
+    ENVIRONMENT "ROCPROF_DISABLE_PID_SUFFIX=1"
     FIXTURES_SETUP rocprofv3-test-systrace-input-json
     FAIL_REGULAR_EXPRESSION
         "HSA_API|HIP_API|HIP_COMPILER_API|MARKER_CORE_API|MARKER_CONTROL_API|MARKER_NAME_API|KERNEL_DISPATCH|CODE_OBJECT"

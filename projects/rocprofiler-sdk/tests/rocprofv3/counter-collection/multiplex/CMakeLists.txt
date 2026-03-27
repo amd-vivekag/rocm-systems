@@ -41,7 +41,7 @@ rocprofiler_add_integration_execute_test(
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> -i
         ${CMAKE_CURRENT_BINARY_DIR}/input.json -d ${CMAKE_CURRENT_BINARY_DIR}/%argt%-cc -o
-        out_json -f csv -- $<TARGET_FILE:simple-transpose>
+        out_json --disable-pid-suffix -f csv -- $<TARGET_FILE:simple-transpose>
     DEPENDS simple-transpose
     TIMEOUT 45
     LABELS "integration-tests"
@@ -68,8 +68,8 @@ rocprofiler_add_integration_execute_test(
     rocprofv3-test-counter-collection-multiple-yaml
     COMMAND
         $<TARGET_FILE:rocprofiler-sdk::rocprofv3> -i ${CMAKE_CURRENT_BINARY_DIR}/input.yml
-        -d ${CMAKE_CURRENT_BINARY_DIR}/%argt%-cc -o out_yaml -f csv --
-        $<TARGET_FILE:simple-transpose>
+        -d ${CMAKE_CURRENT_BINARY_DIR}/%argt%-cc -o out_yaml --disable-pid-suffix -f csv
+        -- $<TARGET_FILE:simple-transpose>
     DEPENDS simple-transpose
     TIMEOUT 45
     LABELS "integration-tests"
