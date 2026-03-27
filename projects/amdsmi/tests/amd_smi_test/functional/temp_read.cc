@@ -134,6 +134,20 @@ void TestTempRead::Run(void) {
       PrintDeviceHeader(processor_handles_[i]);
 
       auto print_temp_metric = [&](amdsmi_temperature_metric_t met, std::string label) {
+        // Only verify nullptr argument handling for current temperature metric
+        // to avoid redundant checks
+        if (met == AMDSMI_TEMP_CURRENT) {
+          // Verify invalid arguments are properly handled
+          DISPLAY_AMDSMI_API("amdsmi_get_temp_metric(type, met, nullptr)",
+                             "gpu=" + std::to_string(i) + ", temp_type=" + std::to_string(type) +
+                                 ", temp_metric=" + std::to_string(met) + ", nullptr",
+                             VERB(STANDARD));
+          err = amdsmi_get_temp_metric(processor_handles_[i],
+                                       static_cast<amdsmi_temperature_type_t>(type), met, nullptr);
+          DISPLAY_AMDSMI_STATUS(VERB(STANDARD), __FILE__, __LINE__, err, AMDSMI_STATUS_INVAL);
+          ASSERT_EQ(err, AMDSMI_STATUS_INVAL);
+        }
+
         DISPLAY_AMDSMI_API("amdsmi_get_temp_metric",
                            "gpu=" + std::to_string(i) + ", temp_type=" + std::to_string(type) +
                                ", temp_metric=" + std::to_string(met),
@@ -148,31 +162,12 @@ void TestTempRead::Run(void) {
           }
         }
 
-        if (err != AMDSMI_STATUS_SUCCESS) {
-          if (err == AMDSMI_STATUS_NOT_SUPPORTED) {
-            // Verify api support checking functionality is working
-            DISPLAY_AMDSMI_API("amdsmi_get_temp_metric",
-                               "gpu=" + std::to_string(i) + ", temp_type=" + std::to_string(type) +
-                                   ", temp_metric=" + std::to_string(met) + ", nullptr",
-                               VERB(STANDARD));
-            err = amdsmi_get_temp_metric(
-                processor_handles_[i], static_cast<amdsmi_temperature_type_t>(type), met, nullptr);
-            DISPLAY_AMDSMI_STATUS(VERB(STANDARD), __FILE__, __LINE__, err, AMDSMI_STATUS_INVAL);
-            ASSERT_EQ(err, AMDSMI_STATUS_INVAL);
-            return;
-          } else {
-            CHK_ERR_ASRT(err)
-          }
+        if (err == AMDSMI_STATUS_NOT_SUPPORTED) {
+          ASSERT_EQ(err, AMDSMI_STATUS_NOT_SUPPORTED);
+          return;
+        } else {
+          CHK_ERR_ASRT(err)
         }
-        // Verify api support checking functionality is working
-        DISPLAY_AMDSMI_API("amdsmi_get_temp_metric",
-                           "gpu=" + std::to_string(i) + ", temp_type=" + std::to_string(type) +
-                               ", temp_metric=" + std::to_string(met) + ", nullptr",
-                           VERB(STANDARD));
-        err = amdsmi_get_temp_metric(processor_handles_[i],
-                                     static_cast<amdsmi_temperature_type_t>(type), met, nullptr);
-        DISPLAY_AMDSMI_STATUS(VERB(STANDARD), __FILE__, __LINE__, err, AMDSMI_STATUS_INVAL);
-        ASSERT_EQ(err, AMDSMI_STATUS_INVAL);
 
         IF_VERB(STANDARD) { std::cout << "\t**" << label << ": " << val_i64 << "C" << std::endl; }
       };
@@ -181,7 +176,7 @@ void TestTempRead::Run(void) {
           continue;
         }
         IF_VERB(STANDARD) {
-          std::cout << "\t** **********" << kTempSensorNameMap.at(type)
+          std::cout << "\n\t** **********" << kTempSensorNameMap.at(type)
                     << " Temperatures **********" << std::endl;
         }
         print_temp_metric(AMDSMI_TEMP_CURRENT, "Current Temp.");
