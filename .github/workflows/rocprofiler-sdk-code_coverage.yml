@@ -42,6 +42,7 @@ concurrency:
 env:
   # TODO(jrmadsen): replace LD_RUNPATH_FLAG, GPU_TARGETS, etc. with internal handling in cmake
   ROCM_PATH: "/opt/rocm"
+  ROCM_NIGHTLY_PATH: "/opt/rocm-nightly"
   GPU_TARGETS: "gfx906 gfx908 gfx90a gfx942 gfx950 gfx1030 gfx1100 gfx1101 gfx1102 gfx1201"
   PATH: "/usr/bin:$PATH"
   ## No tests should be excluded here except for extreme emergencies; tests should only be disabled in CMake
@@ -98,9 +99,14 @@ jobs:
       shell: bash
       working-directory: /tmp
       run: |
-        tar -xf ${{ env.ROCM_PATH }}-${{ matrix.system.gpu-target }}.tar.gz -C ${{ env.ROCM_PATH }}-$ROCM_VERSION
-        ln -s ${{ env.ROCM_PATH }}-$ROCM_VERSION ${{ env.ROCM_PATH }}
-        echo "ROCm installed to: ${{ env.ROCM_PATH }}"
+        rocm_install_path="${{ env.ROCM_NIGHTLY_PATH }}"
+        rocm_tarball="${{ env.ROCM_PATH }}-${{ matrix.system.gpu-target }}.tar.gz"
+        rm -rf "${rocm_install_path}"
+        mkdir -p "${rocm_install_path}"
+        tar -xf "${rocm_tarball}" -C "${rocm_install_path}"
+        rm -rf "${{ env.ROCM_PATH }}"
+        ln -s "${rocm_install_path}" "${{ env.ROCM_PATH }}"
+        echo "ROCm installed to: ${rocm_install_path}"
 
     - name: Clone ROCProfiler SDK & AQLProfile & ROCProfiler Register & ROCR-Runtime
       uses: actions/checkout@v5
@@ -235,7 +241,7 @@ jobs:
         export PATH=${{ env.ROCM_PATH }}/bin:${{ env.ROCM_PATH }}/llvm/bin:/usr/local/bin:~/.local/bin:$PATH
         echo -e "Building & Installing ROCDecode..."
         cmake -B build-rocdecode \
-          -DCMAKE_INSTALL_PREFIX=${{ env.ROCM_PATH }}-$ROCM_VERSION \
+          -DCMAKE_INSTALL_PREFIX=${{ env.ROCM_PATH }} \
           -DCMAKE_PREFIX_PATH=${{ env.ROCM_PATH }} \
           -DCMAKE_CXX_COMPILER=${{ env.ROCM_PATH }}/lib/llvm/bin/amdclang++ \
           -DCMAKE_C_COMPILER_LAUNCHER=ccache \
@@ -246,7 +252,7 @@ jobs:
         echo -e "ROCDecode Installed Successfully!"
         echo -e "Building & Installing ROCJPEG..."
         cmake -B build-rocjpeg \
-          -DCMAKE_INSTALL_PREFIX=${{ env.ROCM_PATH }}-$ROCM_VERSION \
+          -DCMAKE_INSTALL_PREFIX=${{ env.ROCM_PATH }} \
           -DCMAKE_PREFIX_PATH=${{ env.ROCM_PATH }} \
           -DCMAKE_CXX_COMPILER=${{ env.ROCM_PATH }}/lib/llvm/bin/amdclang++ \
           -DCMAKE_C_COMPILER_LAUNCHER=ccache \
@@ -265,8 +271,8 @@ jobs:
         echo "Install ROCProfiler-Register"
         cmake -B build-rocprofiler-register \
           -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-          -DCMAKE_PREFIX_PATH=${{ env.ROCM_PATH }}-$ROCM_VERSION \
-          -DCMAKE_INSTALL_PREFIX=${{ env.ROCM_PATH }}-$ROCM_VERSION \
+          -DCMAKE_PREFIX_PATH=${{ env.ROCM_PATH }} \
+          -DCMAKE_INSTALL_PREFIX=${{ env.ROCM_PATH }} \
           -DCMAKE_C_COMPILER_LAUNCHER=ccache \
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
           .
@@ -284,8 +290,8 @@ jobs:
         echo "Install ROCR-Runtime..."
         cmake -B build \
           -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-          -DCMAKE_PREFIX_PATH='${{ env.ROCM_PATH }}-$ROCM_VERSION;${{ env.ROCM_PATH }}-$ROCM_VERSION/llvm' \
-          -DCMAKE_INSTALL_PREFIX=${{ env.ROCM_PATH }}-$ROCM_VERSION \
+          -DCMAKE_PREFIX_PATH='${{ env.ROCM_PATH }};${{ env.ROCM_PATH }}/llvm' \
+          -DCMAKE_INSTALL_PREFIX=${{ env.ROCM_PATH }} \
           .
         cmake --build build --target all --parallel 16
         cmake --build build --target install
@@ -306,8 +312,8 @@ jobs:
           -DHIP_COMMON_DIR=$HIP_DIR \
           -DCMAKE_BUILD_TYPE=RelWithDebInfo \
           -DHIP_PLATFORM=amd \
-          -DCMAKE_PREFIX_PATH='${{ env.ROCM_PATH }}-$ROCM_VERSION;${{ env.ROCM_PATH }}-$ROCM_VERSION/llvm' \
-          -DCMAKE_INSTALL_PREFIX=${{ env.ROCM_PATH }}-$ROCM_VERSION \
+          -DCMAKE_PREFIX_PATH='${{ env.ROCM_PATH }};${{ env.ROCM_PATH }}/llvm' \
+          -DCMAKE_INSTALL_PREFIX=${{ env.ROCM_PATH }} \
           -DHIP_LLVM_ROOT=${{ env.ROCM_PATH }}/lib/llvm \
           -DHIP_CATCH_TEST=0 \
           -DCLR_BUILD_HIP=ON \
@@ -327,8 +333,8 @@ jobs:
         echo "Install Aqlprofile..."
         cmake -B build-aqlprofile \
           -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-          -DCMAKE_PREFIX_PATH=${{ env.ROCM_PATH }}-$ROCM_VERSION \
-          -DCMAKE_INSTALL_PREFIX=${{ env.ROCM_PATH }}-$ROCM_VERSION \
+          -DCMAKE_PREFIX_PATH=${{ env.ROCM_PATH }} \
+          -DCMAKE_INSTALL_PREFIX=${{ env.ROCM_PATH }} \
           -DCMAKE_C_COMPILER_LAUNCHER=ccache \
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
           .
