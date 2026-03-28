@@ -41,7 +41,7 @@ click-log==0.4.0
     # via doxysphinx
 comm==0.2.3
     # via ipykernel
-cryptography==46.0.3
+cryptography==46.0.6
     # via pyjwt
 debugpy==1.8.18
     # via ipykernel
@@ -205,7 +205,7 @@ requests==2.32.5
     #   pygithub
     #   sphinx
 rocm-docs-core[api-reference]==1.31.0
-    # via -r docs/sphinx/requirements.in
+    # via -r requirements.in
 roman-numerals-py==3.1.0
     # via sphinx
 rpds-py==0.30.0
@@ -252,7 +252,7 @@ sphinxcontrib-htmlhelp==2.1.0
 sphinxcontrib-jsmath==1.0.1
     # via sphinx
 sphinxcontrib-mermaid==1.2.3
-    # via -r docs/sphinx/requirements.in
+    # via -r requirements.in
 sphinxcontrib-qthelp==2.0.0
     # via sphinx
 sphinxcontrib-serializinghtml==2.0.0
