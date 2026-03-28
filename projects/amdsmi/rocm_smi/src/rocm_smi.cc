@@ -2900,7 +2900,7 @@ rsmi_status_t rsmi_dev_subsystem_name_get(uint32_t dv_ind, char* name, size_t le
   LOG_TRACE(ss);
   CHK_SUPPORT_NAME_ONLY(name)
 
-  if (name == nullptr || len == 0) {
+  if (len == 0) {
     return RSMI_STATUS_INVALID_ARGS;
   }
 
@@ -2934,9 +2934,9 @@ rsmi_status_t rsmi_dev_vendor_name_get(uint32_t dv_ind, char* name, size_t len) 
   if (name == nullptr || len == 0) {
     return RSMI_STATUS_INVALID_ARGS;
   }
-  DEVICE_MUTEX
   CHK_SUPPORT_NAME_ONLY(name)
 
+  DEVICE_MUTEX
   assert(len > 0);
 
   ret = get_dev_name_from_id(dv_ind, name, len, NAME_STR_VENDOR);
@@ -2982,12 +2982,12 @@ rsmi_status_t rsmi_dev_pci_bandwidth_get(uint32_t dv_ind, rsmi_pcie_bandwidth_t*
   LOG_TRACE(ss);
 
   GET_DEV_AND_KFDNODE_FROM_INDX
-  DEVICE_MUTEX
 
   if (b == nullptr) {
     return RSMI_STATUS_INVALID_ARGS;
   }
   CHK_API_SUPPORT_ONLY((b), RSMI_DEFAULT_VARIANT, RSMI_DEFAULT_VARIANT)
+  DEVICE_MUTEX
 
   ret = get_frequencies(amd::smi::kDevPCIEClk, RSMI_CLK_TYPE_PCIE, dv_ind, &b->transfer_rate,
                         b->lanes);
@@ -3703,7 +3703,7 @@ rsmi_status_t rsmi_dev_od_volt_curve_regions_get(uint32_t dv_ind, uint32_t* num_
     return RSMI_STATUS_INVALID_ARGS;
   }
 
-  CHK_SUPPORT_NAME_ONLY((num_regions == nullptr || buffer == nullptr) ? nullptr : num_regions)
+  CHK_SUPPORT_NAME_ONLY(num_regions)
 
   DEVICE_MUTEX
   rsmi_status_t ret = get_od_clk_volt_curve_regions(dv_ind, num_regions, buffer);

@@ -3867,10 +3867,10 @@ amdsmi_status_t amdsmi_get_gpu_ecc_status(amdsmi_processor_handle processor_hand
 amdsmi_status_t amdsmi_get_gpu_metrics_header_info(amdsmi_processor_handle processor_handle,
                                                    amd_metrics_table_header_t* header_value) {
   AMDSMI_CHECK_INIT();
-  // nullptr api supported
-  if (header_value != nullptr) {
-    *header_value = amd_metrics_table_header_t{};  // Use a default initializer for the struct
+  if (header_value == nullptr) {
+    return AMDSMI_STATUS_INVAL;
   }
+  *header_value = amd_metrics_table_header_t{};  // Use a default initializer for the struct
 
   return rsmi_wrapper(rsmi_dev_metrics_header_info_get, processor_handle, 0,
                       reinterpret_cast<metrics_table_header_t*>(header_value));
@@ -4058,7 +4058,7 @@ amdsmi_status_t amdsmi_get_gpu_pci_bandwidth(amdsmi_processor_handle processor_h
 amdsmi_status_t amdsmi_get_clk_freq(amdsmi_processor_handle processor_handle,
                                     amdsmi_clk_type_t clk_type, amdsmi_frequencies_t* f) {
   AMDSMI_CHECK_INIT();
-  if (!f) {
+  if (f == nullptr) {
     return AMDSMI_STATUS_INVAL;
   }
 
@@ -4320,6 +4320,7 @@ amdsmi_status_t amdsmi_get_gpu_memory_usage(amdsmi_processor_handle processor_ha
 
 amdsmi_status_t amdsmi_get_gpu_overdrive_level(amdsmi_processor_handle processor_handle,
                                                uint32_t* od) {
+  AMDSMI_CHECK_INIT();
   if (od == nullptr) {
     return AMDSMI_STATUS_INVAL;
   }

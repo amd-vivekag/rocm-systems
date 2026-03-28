@@ -164,14 +164,20 @@ uint32_t GetTestVerbosity();
     }                                                                  \
   } while (0)
 
-#define CHK_ERR_ASRT(RET)                                                              \
-  {                                                                                    \
-    if (dont_fail() && ((RET) != AMDSMI_STATUS_SUCCESS)) {                             \
-      std::cout << "\t===> Abort is over-ridden due to dont_fail command line option." \
-                << std::endl;                                                          \
-      return;                                                                          \
-    }                                                                                  \
-    ASSERT_EQ(AMDSMI_STATUS_SUCCESS, (RET));                                           \
+#define CHK_ERR_ASRT(RET)                                                                     \
+  {                                                                                           \
+    if ((RET) != AMDSMI_STATUS_SUCCESS) {                                                     \
+      const char* err_str;                                                                    \
+      amdsmi_status_code_to_string((RET), &err_str);                                          \
+      std::cout << "\t===> Error: " << (RET) << " (" << err_str << ") at " << __FILE__ << ":" \
+                << std::dec << __LINE__ << std::endl;                                         \
+    }                                                                                         \
+    if (dont_fail() && ((RET) != AMDSMI_STATUS_SUCCESS)) {                                    \
+      std::cout << "\t===> Abort is over-ridden due to dont_fail command line option."        \
+                << std::endl;                                                                 \
+      return;                                                                                 \
+    }                                                                                         \
+    ASSERT_EQ(AMDSMI_STATUS_SUCCESS, (RET));                                                  \
   }
 
 void MakeHeaderStr(const char* inStr, std::string* outStr);
