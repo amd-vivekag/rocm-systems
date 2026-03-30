@@ -97,14 +97,20 @@ jobs:
         apt-get install -y rocm-dev rocdecode-dev libavformat-dev libavcodec-dev
         apt-get autoclean
 
-    - name: Find Sanitizer Libraries
+    - name: Find Sanitizer Libraries and Configure Sanitizer Environment
       shell: bash
+      working-directory: projects/rocprofiler-systems/
       run: |
         ASAN_LIB=$(${{ matrix.compiler }} -print-file-name=libasan.so)
         ASAN_LIB=$(realpath "${ASAN_LIB}")
-        echo "ASAN_LIBRARY=${ASAN_LIB}" >> $GITHUB_ENV
         echo "ASan library: ${ASAN_LIB}"
         ls -la "${ASAN_LIB}"
+        echo "ASAN_LIBRARY=${ASAN_LIB}" >> $GITHUB_ENV
+        SUPP_DIR=${PWD}/scripts
+        LOG_DIR=${PWD}/build/sanitizer-logs
+        echo "ASAN_OPTIONS=suppressions=${SUPP_DIR}/rocprof-sys-asan.supp:detect_leaks=1:new_delete_type_mismatch=0:detect_odr_violation=0:log_path=${LOG_DIR}/asan:log_exe_name=1" >> $GITHUB_ENV
+        echo "LSAN_OPTIONS=suppressions=${SUPP_DIR}/rocprof-sys-lsan.supp:print_suppressions=0" >> $GITHUB_ENV
+        echo "UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=0:log_path=${LOG_DIR}/ubsan:log_exe_name=1" >> $GITHUB_ENV
 
     - name: Configure, Build and Test
       timeout-minutes: 180
@@ -112,9 +118,6 @@ jobs:
       working-directory: projects/rocprofiler-systems/
       env:
         GIT_DISCOVERY_ACROSS_FILESYSTEM: 1
-        ASAN_OPTIONS: "suppressions=${{ github.workspace }}/projects/rocprofiler-systems/scripts/rocprof-sys-asan.supp:detect_leaks=1:new_delete_type_mismatch=0:detect_odr_violation=0:log_path=${{ github.workspace }}/projects/rocprofiler-systems/build/sanitizer-logs/asan:log_exe_name=1"
-        LSAN_OPTIONS: "suppressions=${{ github.workspace }}/projects/rocprofiler-systems/scripts/rocprof-sys-lsan.supp:print_suppressions=0"
-        UBSAN_OPTIONS: "print_stacktrace=1:halt_on_error=0:log_path=${{ github.workspace }}/projects/rocprofiler-systems/build/sanitizer-logs/ubsan:log_exe_name=1"
       run: |
         git config --global --add safe.directory ${GITHUB_WORKSPACE} &&
         git config --global --add safe.directory ${PWD}
@@ -154,6 +157,7 @@ jobs:
           -DCMAKE_PREFIX_PATH=/opt/rocm \
           -DUSE_CLANG_OMP=OFF \
           -- \
+          -VV \
           -LE "transpose|rccl|videodecode|jpegdecode|network"
 
     - name: Check for Leftover Buffered Files
