@@ -2576,18 +2576,17 @@ amdsmi_status_t amdsmi_get_gpu_kfd_info(amdsmi_processor_handle processor_handle
   // Do not return early if this value fails
   // continue to try getting all info
   if (status == AMDSMI_STATUS_SUCCESS) {
-    info->node_id = tmp_node_id;
+      info->node_id = tmp_node_id;
   }
 
   // default to 0xffffffff as not supported
   info->current_partition_id = std::numeric_limits<uint32_t>::max();
   auto tmp_current_partition_id = uint32_t(0);
-  status =
-      rsmi_wrapper(rsmi_dev_partition_id_get, processor_handle, 0, &(tmp_current_partition_id));
+  status = rsmi_wrapper(rsmi_dev_partition_id_get, processor_handle, 0, &(tmp_current_partition_id));
   // Do not return early if this value fails
   // continue to try getting all info
   if (status == AMDSMI_STATUS_SUCCESS) {
-    info->current_partition_id = tmp_current_partition_id;
+      info->current_partition_id = tmp_current_partition_id;
   }
 
   return AMDSMI_STATUS_SUCCESS;
