@@ -2202,27 +2202,27 @@ amdsmi_status_t amdsmi_get_fw_info(amdsmi_processor_handle processor_handle,
 
   AMDSMI_CHECK_INIT();
  
-    amd::smi::AMDSmiGPUDevice* gpu_device = nullptr;
-    amdsmi_status_t status = get_gpu_device_from_handle(processor_handle, &gpu_device);
-    if (status != AMDSMI_STATUS_SUCCESS) {
-        return status;
-    }
+  amd::smi::AMDSmiGPUDevice* gpu_device = nullptr;
+  amdsmi_status_t status = get_gpu_device_from_handle(processor_handle, &gpu_device);
+  if (status != AMDSMI_STATUS_SUCCESS) {
+      return status;
+  }
 
-    if (info == nullptr) {
-        return AMDSMI_STATUS_INVAL;
-    }
-    memset(info, 0, sizeof(amdsmi_fw_info_t));
+  if (info == nullptr) {
+      return AMDSMI_STATUS_INVAL;
+  }
+  memset(info, 0, sizeof(amdsmi_fw_info_t));
 
-    // collect all rsmi supported fw block
-    for (auto ite = fw_in_rsmi.begin(); ite != fw_in_rsmi.end(); ite ++) {
-        auto r = rsmi_wrapper(rsmi_dev_firmware_version_get, processor_handle, 0,
-                (*ite).second,
-                &(info->fw_info_list[info->num_fw_info].fw_version));
-        if (r == AMDSMI_STATUS_SUCCESS) {
-            info->fw_info_list[info->num_fw_info].fw_id = (*ite).first;
-            info->num_fw_info++;
-        }
-    }
+  // collect all rsmi supported fw block
+  for (auto ite = fw_in_rsmi.begin(); ite != fw_in_rsmi.end(); ite ++) {
+      auto r = rsmi_wrapper(rsmi_dev_firmware_version_get, processor_handle, 0,
+              (*ite).second,
+              &(info->fw_info_list[info->num_fw_info].fw_version));
+      if (r == AMDSMI_STATUS_SUCCESS) {
+          info->fw_info_list[info->num_fw_info].fw_id = (*ite).first;
+          info->num_fw_info++;
+      }
+  }
   return AMDSMI_STATUS_SUCCESS;
 }
 
@@ -2549,25 +2549,25 @@ amdsmi_status_t amdsmi_get_gpu_kfd_info(amdsmi_processor_handle processor_handle
                                         amdsmi_kfd_info_t* info) {
   AMDSMI_CHECK_INIT();
 
-    if (info == nullptr) {
-        return AMDSMI_STATUS_INVAL;
-    }
+  if (info == nullptr) {
+      return AMDSMI_STATUS_INVAL;
+  }
 
-    // default to 0xffffffffffffffff as not supported
-    amd::smi::AMDSmiGPUDevice* gpu_device = nullptr;
-    amdsmi_status_t status = get_gpu_device_from_handle(processor_handle, &gpu_device);
-    if (status != AMDSMI_STATUS_SUCCESS) {
-        return status;
-    }
-    info->kfd_id = std::numeric_limits<uint64_t>::max();
-    auto tmp_kfd_id = uint64_t(0);
-    status = rsmi_wrapper(rsmi_dev_guid_get, processor_handle, 0,
-                          &(tmp_kfd_id));
-    // Do not return early if this value fails
-    // continue to try getting all info
-    if (status == AMDSMI_STATUS_SUCCESS) {
-        info->kfd_id = tmp_kfd_id;
-    }
+  // default to 0xffffffffffffffff as not supported
+  amd::smi::AMDSmiGPUDevice* gpu_device = nullptr;
+  amdsmi_status_t status = get_gpu_device_from_handle(processor_handle, &gpu_device);
+  if (status != AMDSMI_STATUS_SUCCESS) {
+      return status;
+  }
+  info->kfd_id = std::numeric_limits<uint64_t>::max();
+  auto tmp_kfd_id = uint64_t(0);
+  status = rsmi_wrapper(rsmi_dev_guid_get, processor_handle, 0,
+                        &(tmp_kfd_id));
+  // Do not return early if this value fails
+  // continue to try getting all info
+  if (status == AMDSMI_STATUS_SUCCESS) {
+      info->kfd_id = tmp_kfd_id;
+  }
 
   // default to 0xffffffff as not supported
   info->node_id = std::numeric_limits<uint32_t>::max();
