@@ -2491,7 +2491,9 @@ def test_iteration_multiplexing_kernel_launch_params(
     test_utils.clean_output_dir(config["cleanup"], workload_dir)
 
 
-@pytest.mark.iteration_multiplexing_2
+# Not part of automated test runs since multiple profiling
+# workloads mapped to the same GPU corrupts the hardware
+# counters
 def test_iteration_multiplexing_deterministic_counter_accuracy(
     binary_handler_profile_rocprof_compute,
     binary_handler_analyze_rocprof_compute,
