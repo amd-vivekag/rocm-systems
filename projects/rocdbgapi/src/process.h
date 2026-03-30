@@ -32,6 +32,7 @@
 #include "handle_object.h"
 #include "initialization.h"
 #include "logging.h"
+#include "memory.h"
 #include "os_driver.h"
 #include "queue.h"
 #include "runtime_rdebug.h"
@@ -133,22 +134,8 @@ private:
 
   const agent_t m_dummy_agent;
 
-  using code_object_index_key_t = std::pair<host_address_t, std::string>;
-  struct code_object_index_hash_t
-  {
-    size_t operator() (const code_object_index_key_t &key) const
-    {
-      using underlying_type_t
-        = code_object_index_key_t::first_type::underlying_type_t;
-      return std::hash<underlying_type_t>{}(
-        static_cast<underlying_type_t> (key.first));
-    }
-  };
-
-  // Maintain an index of all the loaded code objects, their address and uri.
-  std::unordered_map<code_object_index_key_t, code_object_t *,
-                     code_object_index_hash_t>
-    m_code_objects_index;
+  // Maintain an index of all the loaded code objects, keyed by load address.
+  std::unordered_map<host_address_t, code_object_t *> m_code_objects_index;
 
   std::pair<std::variant<process_t *, agent_t *, queue_t *>,
             os_exception_mask_t>

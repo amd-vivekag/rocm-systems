@@ -1295,23 +1295,34 @@ process_t::update_code_objects ()
           read_string (reinterpret_cast<uintptr_t> (entry.l_name), &uri, -1);
 
           code_object_t *code_object = nullptr;
-
-          /* FIXME: We have an ABA problem for memory based code objects. A
-             new code object of the same size could have been loaded at the
-             same address as an old stale code object. We could add a
-             unique identifier to the URI.  */
-          auto key = std::make_pair (entry.l_addr, uri);
-          if (auto found = m_code_objects_index.find (key);
+          if (auto found = m_code_objects_index.find (entry.l_addr);
               found != m_code_objects_index.end ())
             {
               code_object = found->second;
+
+              /* FIXME: We have an ABA problem for memory based code objects. A
+                 new code object of the same size could have been loaded at the
+                 same address as an old stale code object. We could add a
+                 unique identifier to the URI.  */
+              if (code_object->uri () != uri)
+                {
+                  /* Two code objects cannot be loaded at the same address,
+                     destroy the old one and remove it from the index.  */
+                  m_code_objects_index.erase (found);
+                  destroy (code_object);
+
+                  /* Create a new code object for this entry.  */
+                  code_object = nullptr;
+                }
             }
-          else
+
+          if (code_object == nullptr)
             {
               code_object = &create<code_object_t> (*this, uri, entry.l_addr);
 
               [[maybe_unused]] bool success
-                = m_code_objects_index.emplace (key, code_object).second;
+                = m_code_objects_index.emplace (entry.l_addr, code_object)
+                    .second;
               dbgapi_assert (success
                              && "failed to insert code object in index");
             }
@@ -1334,8 +1345,7 @@ process_t::update_code_objects ()
       if (code_object_it->mark () < code_object_mark)
         {
           [[maybe_unused]] size_t count
-            = m_code_objects_index.erase (std::make_pair (
-              code_object_it->load_address (), code_object_it->uri ()));
+            = m_code_objects_index.erase (code_object_it->load_address ());
           dbgapi_assert (count == 1);
 
           code_object_it = destroy (code_object_it);
